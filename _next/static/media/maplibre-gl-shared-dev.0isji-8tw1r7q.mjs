@@ -1,6 +1,6 @@
 /**
 * MapLibre GL JS
-* @license 3-Clause BSD. Full text of license: https://github.com/maplibre/maplibre-gl-js/blob/v6.13.0/LICENSE.txt
+* @license 3-Clause BSD. Full text of license: https://github.com/maplibre/maplibre-gl-js/blob/v6.11.2/LICENSE.txt
 */
 //#region \0rolldown/runtime.js
 var __create = Object.create;
@@ -404,6 +404,70 @@ function isOffscreenCanvasDistorted() {
 }
 var ARRAY_TYPE = typeof Float32Array !== "undefined" ? Float32Array : Array;
 /**
+* 2x2 Matrix
+* @module mat2
+*/
+/**
+* Creates a new identity mat2
+*
+* @returns {mat2} a new 2x2 matrix
+*/
+function create$8() {
+	var out = new ARRAY_TYPE(4);
+	if (ARRAY_TYPE != Float32Array) {
+		out[1] = 0;
+		out[2] = 0;
+	}
+	out[0] = 1;
+	out[3] = 1;
+	return out;
+}
+/**
+* Inverts a mat2
+*
+* @param {mat2} out the receiving matrix
+* @param {ReadonlyMat2} a the source matrix
+* @returns {mat2 | null} out, or null if source matrix is not invertible
+*/
+function invert$5(out, a) {
+	var a0 = a[0], a1 = a[1], a2 = a[2], a3 = a[3];
+	var det = a0 * a3 - a2 * a1;
+	if (!det) return null;
+	det = 1 / det;
+	out[0] = a3 * det;
+	out[1] = -a1 * det;
+	out[2] = -a2 * det;
+	out[3] = a0 * det;
+	return out;
+}
+/**
+* Calculates the determinant of a mat2
+*
+* @param {ReadonlyMat2} a the source matrix
+* @returns {Number} determinant of a
+*/
+function determinant$3(a) {
+	return a[0] * a[3] - a[2] * a[1];
+}
+/**
+* Rotates a mat2 by the given angle
+*
+* @param {mat2} out the receiving matrix
+* @param {ReadonlyMat2} a the matrix to rotate
+* @param {Number} rad the angle to rotate the matrix by
+* @returns {mat2} out
+*/
+function rotate$4(out, a, rad) {
+	var a0 = a[0], a1 = a[1], a2 = a[2], a3 = a[3];
+	var s = Math.sin(rad);
+	var c = Math.cos(rad);
+	out[0] = a0 * c + a2 * s;
+	out[1] = a1 * c + a3 * s;
+	out[2] = a0 * -s + a2 * c;
+	out[3] = a1 * -s + a3 * c;
+	return out;
+}
+/**
 * 3x3 Matrix
 * @module mat3
 */
@@ -428,6 +492,610 @@ function create$6() {
 	return out;
 }
 /**
+* Calculates the determinant of a mat3
+*
+* @param {ReadonlyMat3} a the source matrix
+* @returns {Number} determinant of a
+*/
+function determinant$1(a) {
+	var a00 = a[0], a01 = a[1], a02 = a[2];
+	var a10 = a[3], a11 = a[4], a12 = a[5];
+	var a20 = a[6], a21 = a[7], a22 = a[8];
+	return a00 * (a22 * a11 - a12 * a21) + a01 * (-a22 * a10 + a12 * a20) + a02 * (a21 * a10 - a11 * a20);
+}
+/**
+* Creates a matrix from a given angle
+* This is equivalent to (but much faster than):
+*
+*     mat3.identity(dest);
+*     mat3.rotate(dest, dest, rad);
+*
+* @param {mat3} out mat3 receiving operation result
+* @param {Number} rad the angle to rotate the matrix by
+* @returns {mat3} out
+*/
+function fromRotation$2(out, rad) {
+	var s = Math.sin(rad), c = Math.cos(rad);
+	out[0] = c;
+	out[1] = s;
+	out[2] = 0;
+	out[3] = -s;
+	out[4] = c;
+	out[5] = 0;
+	out[6] = 0;
+	out[7] = 0;
+	out[8] = 1;
+	return out;
+}
+/**
+* Calculates a 3x3 matrix from the given quaternion
+*
+* @param {mat3} out mat3 receiving operation result
+* @param {ReadonlyQuat} q Quaternion to create matrix from
+*
+* @returns {mat3} out
+*/
+function fromQuat$1(out, q) {
+	var x = q[0], y = q[1], z = q[2], w = q[3];
+	var x2 = x + x;
+	var y2 = y + y;
+	var z2 = z + z;
+	var xx = x * x2;
+	var yx = y * x2;
+	var yy = y * y2;
+	var zx = z * x2;
+	var zy = z * y2;
+	var zz = z * z2;
+	var wx = w * x2;
+	var wy = w * y2;
+	var wz = w * z2;
+	out[0] = 1 - yy - zz;
+	out[3] = yx - wz;
+	out[6] = zx + wy;
+	out[1] = yx + wz;
+	out[4] = 1 - xx - zz;
+	out[7] = zy - wx;
+	out[2] = zx - wy;
+	out[5] = zy + wx;
+	out[8] = 1 - xx - yy;
+	return out;
+}
+/**
+* 4x4 Matrix<br>Format: column-major, when typed out it looks like row-major<br>The matrices are being post multiplied.
+* @module mat4
+*/
+/**
+* Creates a new identity mat4
+*
+* @returns {mat4} a new 4x4 matrix
+*/
+function create$5() {
+	var out = new ARRAY_TYPE(16);
+	if (ARRAY_TYPE != Float32Array) {
+		out[1] = 0;
+		out[2] = 0;
+		out[3] = 0;
+		out[4] = 0;
+		out[6] = 0;
+		out[7] = 0;
+		out[8] = 0;
+		out[9] = 0;
+		out[11] = 0;
+		out[12] = 0;
+		out[13] = 0;
+		out[14] = 0;
+	}
+	out[0] = 1;
+	out[5] = 1;
+	out[10] = 1;
+	out[15] = 1;
+	return out;
+}
+/**
+* Creates a new mat4 initialized with values from an existing matrix
+*
+* @param {ReadonlyMat4} a matrix to clone
+* @returns {mat4} a new 4x4 matrix
+*/
+function clone$6(a) {
+	var out = new ARRAY_TYPE(16);
+	out[0] = a[0];
+	out[1] = a[1];
+	out[2] = a[2];
+	out[3] = a[3];
+	out[4] = a[4];
+	out[5] = a[5];
+	out[6] = a[6];
+	out[7] = a[7];
+	out[8] = a[8];
+	out[9] = a[9];
+	out[10] = a[10];
+	out[11] = a[11];
+	out[12] = a[12];
+	out[13] = a[13];
+	out[14] = a[14];
+	out[15] = a[15];
+	return out;
+}
+/**
+* Copy the values from one mat4 to another
+*
+* @param {mat4} out the receiving matrix
+* @param {ReadonlyMat4} a the source matrix
+* @returns {mat4} out
+*/
+function copy$5(out, a) {
+	out[0] = a[0];
+	out[1] = a[1];
+	out[2] = a[2];
+	out[3] = a[3];
+	out[4] = a[4];
+	out[5] = a[5];
+	out[6] = a[6];
+	out[7] = a[7];
+	out[8] = a[8];
+	out[9] = a[9];
+	out[10] = a[10];
+	out[11] = a[11];
+	out[12] = a[12];
+	out[13] = a[13];
+	out[14] = a[14];
+	out[15] = a[15];
+	return out;
+}
+/**
+* Set a mat4 to the identity matrix
+*
+* @param {mat4} out the receiving matrix
+* @returns {mat4} out
+*/
+function identity$2(out) {
+	out[0] = 1;
+	out[1] = 0;
+	out[2] = 0;
+	out[3] = 0;
+	out[4] = 0;
+	out[5] = 1;
+	out[6] = 0;
+	out[7] = 0;
+	out[8] = 0;
+	out[9] = 0;
+	out[10] = 1;
+	out[11] = 0;
+	out[12] = 0;
+	out[13] = 0;
+	out[14] = 0;
+	out[15] = 1;
+	return out;
+}
+/**
+* Inverts a mat4
+*
+* @param {mat4} out the receiving matrix
+* @param {ReadonlyMat4} a the source matrix
+* @returns {mat4 | null} out, or null if source matrix is not invertible
+*/
+function invert$2(out, a) {
+	var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+	var a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+	var a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+	var a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+	var b00 = a00 * a11 - a01 * a10;
+	var b01 = a00 * a12 - a02 * a10;
+	var b02 = a00 * a13 - a03 * a10;
+	var b03 = a01 * a12 - a02 * a11;
+	var b04 = a01 * a13 - a03 * a11;
+	var b05 = a02 * a13 - a03 * a12;
+	var b06 = a20 * a31 - a21 * a30;
+	var b07 = a20 * a32 - a22 * a30;
+	var b08 = a20 * a33 - a23 * a30;
+	var b09 = a21 * a32 - a22 * a31;
+	var b10 = a21 * a33 - a23 * a31;
+	var b11 = a22 * a33 - a23 * a32;
+	var det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+	if (!det) return null;
+	det = 1 / det;
+	out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+	out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+	out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+	out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
+	out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+	out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+	out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+	out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
+	out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+	out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+	out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+	out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
+	out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
+	out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
+	out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+	out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+	return out;
+}
+/**
+* Multiplies two mat4s
+*
+* @param {mat4} out the receiving matrix
+* @param {ReadonlyMat4} a the first operand
+* @param {ReadonlyMat4} b the second operand
+* @returns {mat4} out
+*/
+function multiply$5(out, a, b) {
+	var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+	var a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+	var a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+	var a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+	var b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+	out[0] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+	out[1] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+	out[2] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+	out[3] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+	b0 = b[4];
+	b1 = b[5];
+	b2 = b[6];
+	b3 = b[7];
+	out[4] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+	out[5] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+	out[6] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+	out[7] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+	b0 = b[8];
+	b1 = b[9];
+	b2 = b[10];
+	b3 = b[11];
+	out[8] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+	out[9] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+	out[10] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+	out[11] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+	b0 = b[12];
+	b1 = b[13];
+	b2 = b[14];
+	b3 = b[15];
+	out[12] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+	out[13] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+	out[14] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+	out[15] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+	return out;
+}
+/**
+* Translate a mat4 by the given vector
+*
+* @param {mat4} out the receiving matrix
+* @param {ReadonlyMat4} a the matrix to translate
+* @param {ReadonlyVec3} v vector to translate by
+* @returns {mat4} out
+*/
+function translate$2(out, a, v) {
+	var x = v[0], y = v[1], z = v[2];
+	var a00, a01, a02, a03;
+	var a10, a11, a12, a13;
+	var a20, a21, a22, a23;
+	if (a === out) {
+		out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
+		out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
+		out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
+		out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
+	} else {
+		a00 = a[0];
+		a01 = a[1];
+		a02 = a[2];
+		a03 = a[3];
+		a10 = a[4];
+		a11 = a[5];
+		a12 = a[6];
+		a13 = a[7];
+		a20 = a[8];
+		a21 = a[9];
+		a22 = a[10];
+		a23 = a[11];
+		out[0] = a00;
+		out[1] = a01;
+		out[2] = a02;
+		out[3] = a03;
+		out[4] = a10;
+		out[5] = a11;
+		out[6] = a12;
+		out[7] = a13;
+		out[8] = a20;
+		out[9] = a21;
+		out[10] = a22;
+		out[11] = a23;
+		out[12] = a00 * x + a10 * y + a20 * z + a[12];
+		out[13] = a01 * x + a11 * y + a21 * z + a[13];
+		out[14] = a02 * x + a12 * y + a22 * z + a[14];
+		out[15] = a03 * x + a13 * y + a23 * z + a[15];
+	}
+	return out;
+}
+/**
+* Scales the mat4 by the dimensions in the given vec3 not using vectorization
+*
+* @param {mat4} out the receiving matrix
+* @param {ReadonlyMat4} a the matrix to scale
+* @param {ReadonlyVec3} v the vec3 to scale the matrix by
+* @returns {mat4} out
+**/
+function scale$5(out, a, v) {
+	var x = v[0], y = v[1], z = v[2];
+	out[0] = a[0] * x;
+	out[1] = a[1] * x;
+	out[2] = a[2] * x;
+	out[3] = a[3] * x;
+	out[4] = a[4] * y;
+	out[5] = a[5] * y;
+	out[6] = a[6] * y;
+	out[7] = a[7] * y;
+	out[8] = a[8] * z;
+	out[9] = a[9] * z;
+	out[10] = a[10] * z;
+	out[11] = a[11] * z;
+	out[12] = a[12];
+	out[13] = a[13];
+	out[14] = a[14];
+	out[15] = a[15];
+	return out;
+}
+/**
+* Rotates a matrix by the given angle around the X axis
+*
+* @param {mat4} out the receiving matrix
+* @param {ReadonlyMat4} a the matrix to rotate
+* @param {Number} rad the angle to rotate the matrix by
+* @returns {mat4} out
+*/
+function rotateX$3(out, a, rad) {
+	var s = Math.sin(rad);
+	var c = Math.cos(rad);
+	var a10 = a[4];
+	var a11 = a[5];
+	var a12 = a[6];
+	var a13 = a[7];
+	var a20 = a[8];
+	var a21 = a[9];
+	var a22 = a[10];
+	var a23 = a[11];
+	if (a !== out) {
+		out[0] = a[0];
+		out[1] = a[1];
+		out[2] = a[2];
+		out[3] = a[3];
+		out[12] = a[12];
+		out[13] = a[13];
+		out[14] = a[14];
+		out[15] = a[15];
+	}
+	out[4] = a10 * c + a20 * s;
+	out[5] = a11 * c + a21 * s;
+	out[6] = a12 * c + a22 * s;
+	out[7] = a13 * c + a23 * s;
+	out[8] = a20 * c - a10 * s;
+	out[9] = a21 * c - a11 * s;
+	out[10] = a22 * c - a12 * s;
+	out[11] = a23 * c - a13 * s;
+	return out;
+}
+/**
+* Rotates a matrix by the given angle around the Y axis
+*
+* @param {mat4} out the receiving matrix
+* @param {ReadonlyMat4} a the matrix to rotate
+* @param {Number} rad the angle to rotate the matrix by
+* @returns {mat4} out
+*/
+function rotateY$3(out, a, rad) {
+	var s = Math.sin(rad);
+	var c = Math.cos(rad);
+	var a00 = a[0];
+	var a01 = a[1];
+	var a02 = a[2];
+	var a03 = a[3];
+	var a20 = a[8];
+	var a21 = a[9];
+	var a22 = a[10];
+	var a23 = a[11];
+	if (a !== out) {
+		out[4] = a[4];
+		out[5] = a[5];
+		out[6] = a[6];
+		out[7] = a[7];
+		out[12] = a[12];
+		out[13] = a[13];
+		out[14] = a[14];
+		out[15] = a[15];
+	}
+	out[0] = a00 * c - a20 * s;
+	out[1] = a01 * c - a21 * s;
+	out[2] = a02 * c - a22 * s;
+	out[3] = a03 * c - a23 * s;
+	out[8] = a00 * s + a20 * c;
+	out[9] = a01 * s + a21 * c;
+	out[10] = a02 * s + a22 * c;
+	out[11] = a03 * s + a23 * c;
+	return out;
+}
+/**
+* Rotates a matrix by the given angle around the Z axis
+*
+* @param {mat4} out the receiving matrix
+* @param {ReadonlyMat4} a the matrix to rotate
+* @param {Number} rad the angle to rotate the matrix by
+* @returns {mat4} out
+*/
+function rotateZ$3(out, a, rad) {
+	var s = Math.sin(rad);
+	var c = Math.cos(rad);
+	var a00 = a[0];
+	var a01 = a[1];
+	var a02 = a[2];
+	var a03 = a[3];
+	var a10 = a[4];
+	var a11 = a[5];
+	var a12 = a[6];
+	var a13 = a[7];
+	if (a !== out) {
+		out[8] = a[8];
+		out[9] = a[9];
+		out[10] = a[10];
+		out[11] = a[11];
+		out[12] = a[12];
+		out[13] = a[13];
+		out[14] = a[14];
+		out[15] = a[15];
+	}
+	out[0] = a00 * c + a10 * s;
+	out[1] = a01 * c + a11 * s;
+	out[2] = a02 * c + a12 * s;
+	out[3] = a03 * c + a13 * s;
+	out[4] = a10 * c - a00 * s;
+	out[5] = a11 * c - a01 * s;
+	out[6] = a12 * c - a02 * s;
+	out[7] = a13 * c - a03 * s;
+	return out;
+}
+/**
+* Creates a matrix from a vector scaling
+* This is equivalent to (but much faster than):
+*
+*     mat4.identity(dest);
+*     mat4.scale(dest, dest, vec);
+*
+* @param {mat4} out mat4 receiving operation result
+* @param {ReadonlyVec3} v Scaling vector
+* @returns {mat4} out
+*/
+function fromScaling(out, v) {
+	out[0] = v[0];
+	out[1] = 0;
+	out[2] = 0;
+	out[3] = 0;
+	out[4] = 0;
+	out[5] = v[1];
+	out[6] = 0;
+	out[7] = 0;
+	out[8] = 0;
+	out[9] = 0;
+	out[10] = v[2];
+	out[11] = 0;
+	out[12] = 0;
+	out[13] = 0;
+	out[14] = 0;
+	out[15] = 1;
+	return out;
+}
+/**
+* Generates a perspective projection matrix with the given bounds.
+* The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+* which matches WebGL/OpenGL's clip volume.
+* Passing null/undefined/no value for far will generate infinite projection matrix.
+*
+* @param {mat4} out mat4 frustum matrix will be written into
+* @param {number} fovy Vertical field of view in radians
+* @param {number} aspect Aspect ratio. typically viewport width/height
+* @param {number} near Near bound of the frustum
+* @param {number} far Far bound of the frustum, can be null or Infinity
+* @returns {mat4} out
+*/
+function perspectiveNO(out, fovy, aspect, near, far) {
+	var f = 1 / Math.tan(fovy / 2);
+	out[0] = f / aspect;
+	out[1] = 0;
+	out[2] = 0;
+	out[3] = 0;
+	out[4] = 0;
+	out[5] = f;
+	out[6] = 0;
+	out[7] = 0;
+	out[8] = 0;
+	out[9] = 0;
+	out[11] = -1;
+	out[12] = 0;
+	out[13] = 0;
+	out[15] = 0;
+	if (far != null && far !== Infinity) {
+		var nf = 1 / (near - far);
+		out[10] = (far + near) * nf;
+		out[14] = 2 * far * near * nf;
+	} else {
+		out[10] = -1;
+		out[14] = -2 * near;
+	}
+	return out;
+}
+/**
+* Alias for {@link mat4.perspectiveNO}
+* @function
+*/
+var perspective = perspectiveNO;
+/**
+* Generates a orthogonal projection matrix with the given bounds.
+* The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+* which matches WebGL/OpenGL's clip volume.
+*
+* @param {mat4} out mat4 frustum matrix will be written into
+* @param {number} left Left bound of the frustum
+* @param {number} right Right bound of the frustum
+* @param {number} bottom Bottom bound of the frustum
+* @param {number} top Top bound of the frustum
+* @param {number} near Near bound of the frustum
+* @param {number} far Far bound of the frustum
+* @returns {mat4} out
+*/
+function orthoNO(out, left, right, bottom, top, near, far) {
+	var lr = 1 / (left - right);
+	var bt = 1 / (bottom - top);
+	var nf = 1 / (near - far);
+	out[0] = -2 * lr;
+	out[1] = 0;
+	out[2] = 0;
+	out[3] = 0;
+	out[4] = 0;
+	out[5] = -2 * bt;
+	out[6] = 0;
+	out[7] = 0;
+	out[8] = 0;
+	out[9] = 0;
+	out[10] = 2 * nf;
+	out[11] = 0;
+	out[12] = (left + right) * lr;
+	out[13] = (top + bottom) * bt;
+	out[14] = (far + near) * nf;
+	out[15] = 1;
+	return out;
+}
+/**
+* Alias for {@link mat4.orthoNO}
+* @function
+*/
+var ortho = orthoNO;
+/**
+* Returns whether or not the matrices have exactly the same elements in the same position (when compared with ===)
+*
+* @param {ReadonlyMat4} a The first matrix.
+* @param {ReadonlyMat4} b The second matrix.
+* @returns {Boolean} True if the matrices are equal, false otherwise.
+*/
+function exactEquals$5(a, b) {
+	return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3] && a[4] === b[4] && a[5] === b[5] && a[6] === b[6] && a[7] === b[7] && a[8] === b[8] && a[9] === b[9] && a[10] === b[10] && a[11] === b[11] && a[12] === b[12] && a[13] === b[13] && a[14] === b[14] && a[15] === b[15];
+}
+/**
+* Returns whether or not the matrices have approximately the same elements in the same position.
+*
+* @param {ReadonlyMat4} a The first matrix.
+* @param {ReadonlyMat4} b The second matrix.
+* @returns {Boolean} True if the matrices are equal, false otherwise.
+*/
+function equals$6(a, b) {
+	var a0 = a[0], a1 = a[1], a2 = a[2], a3 = a[3];
+	var a4 = a[4], a5 = a[5], a6 = a[6], a7 = a[7];
+	var a8 = a[8], a9 = a[9], a10 = a[10], a11 = a[11];
+	var a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
+	var b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+	var b4 = b[4], b5 = b[5], b6 = b[6], b7 = b[7];
+	var b8 = b[8], b9 = b[9], b10 = b[10], b11 = b[11];
+	var b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15];
+	return Math.abs(a0 - b0) <= 1e-6 * Math.max(1, Math.abs(a0), Math.abs(b0)) && Math.abs(a1 - b1) <= 1e-6 * Math.max(1, Math.abs(a1), Math.abs(b1)) && Math.abs(a2 - b2) <= 1e-6 * Math.max(1, Math.abs(a2), Math.abs(b2)) && Math.abs(a3 - b3) <= 1e-6 * Math.max(1, Math.abs(a3), Math.abs(b3)) && Math.abs(a4 - b4) <= 1e-6 * Math.max(1, Math.abs(a4), Math.abs(b4)) && Math.abs(a5 - b5) <= 1e-6 * Math.max(1, Math.abs(a5), Math.abs(b5)) && Math.abs(a6 - b6) <= 1e-6 * Math.max(1, Math.abs(a6), Math.abs(b6)) && Math.abs(a7 - b7) <= 1e-6 * Math.max(1, Math.abs(a7), Math.abs(b7)) && Math.abs(a8 - b8) <= 1e-6 * Math.max(1, Math.abs(a8), Math.abs(b8)) && Math.abs(a9 - b9) <= 1e-6 * Math.max(1, Math.abs(a9), Math.abs(b9)) && Math.abs(a10 - b10) <= 1e-6 * Math.max(1, Math.abs(a10), Math.abs(b10)) && Math.abs(a11 - b11) <= 1e-6 * Math.max(1, Math.abs(a11), Math.abs(b11)) && Math.abs(a12 - b12) <= 1e-6 * Math.max(1, Math.abs(a12), Math.abs(b12)) && Math.abs(a13 - b13) <= 1e-6 * Math.max(1, Math.abs(a13), Math.abs(b13)) && Math.abs(a14 - b14) <= 1e-6 * Math.max(1, Math.abs(a14), Math.abs(b14)) && Math.abs(a15 - b15) <= 1e-6 * Math.max(1, Math.abs(a15), Math.abs(b15));
+}
+/**
 * 3 Dimensional Vector
 * @module vec3
 */
@@ -443,6 +1111,19 @@ function create$4() {
 		out[1] = 0;
 		out[2] = 0;
 	}
+	return out;
+}
+/**
+* Creates a new vec3 initialized with values from an existing vector
+*
+* @param {ReadonlyVec3} a vector to clone
+* @returns {vec3} a new 3D vector
+*/
+function clone$5(a) {
+	var out = new ARRAY_TYPE(3);
+	out[0] = a[0];
+	out[1] = a[1];
+	out[2] = a[2];
 	return out;
 }
 /**
@@ -470,6 +1151,89 @@ function fromValues$4(x, y, z) {
 	out[0] = x;
 	out[1] = y;
 	out[2] = z;
+	return out;
+}
+/**
+* Adds two vec3's
+*
+* @param {vec3} out the receiving vector
+* @param {ReadonlyVec3} a the first operand
+* @param {ReadonlyVec3} b the second operand
+* @returns {vec3} out
+*/
+function add$4(out, a, b) {
+	out[0] = a[0] + b[0];
+	out[1] = a[1] + b[1];
+	out[2] = a[2] + b[2];
+	return out;
+}
+/**
+* Subtracts vector b from vector a
+*
+* @param {vec3} out the receiving vector
+* @param {ReadonlyVec3} a the first operand
+* @param {ReadonlyVec3} b the second operand
+* @returns {vec3} out
+*/
+function subtract$2(out, a, b) {
+	out[0] = a[0] - b[0];
+	out[1] = a[1] - b[1];
+	out[2] = a[2] - b[2];
+	return out;
+}
+/**
+* Scales a vec3 by a scalar number
+*
+* @param {vec3} out the receiving vector
+* @param {ReadonlyVec3} a the vector to scale
+* @param {Number} b amount to scale the vector by
+* @returns {vec3} out
+*/
+function scale$4(out, a, b) {
+	out[0] = a[0] * b;
+	out[1] = a[1] * b;
+	out[2] = a[2] * b;
+	return out;
+}
+/**
+* Adds two vec3's after scaling the second operand by a scalar value
+*
+* @param {vec3} out the receiving vector
+* @param {ReadonlyVec3} a the first operand
+* @param {ReadonlyVec3} b the second operand
+* @param {Number} scale the amount to scale b by before adding
+* @returns {vec3} out
+*/
+function scaleAndAdd$2(out, a, b, scale) {
+	out[0] = a[0] + b[0] * scale;
+	out[1] = a[1] + b[1] * scale;
+	out[2] = a[2] + b[2] * scale;
+	return out;
+}
+/**
+* Calculates the euclidian distance between two vec3's
+*
+* @param {ReadonlyVec3} a the first operand
+* @param {ReadonlyVec3} b the second operand
+* @returns {Number} distance between a and b
+*/
+function distance$2(a, b) {
+	var x = b[0] - a[0];
+	var y = b[1] - a[1];
+	var z = b[2] - a[2];
+	return Math.sqrt(x * x + y * y + z * z);
+}
+/**
+* Negates the components of a vec3
+*
+* @param {vec3} out the receiving vector
+* @param {ReadonlyVec3} a vector to negate
+* @returns {vec3} out
+*/
+function negate$2(out, a) {
+	out[0] = -a[0];
+	out[1] = -a[1];
+	out[2] = -a[2];
 	return out;
 }
 /**
@@ -517,6 +1281,142 @@ function cross$2(out, a, b) {
 	return out;
 }
 /**
+* Transforms the vec3 with a mat4.
+* 4th vector component is implicitly '1'
+*
+* @param {vec3} out the receiving vector
+* @param {ReadonlyVec3} a the vector to transform
+* @param {ReadonlyMat4} m matrix to transform with
+* @returns {vec3} out
+*/
+function transformMat4$2(out, a, m) {
+	var x = a[0], y = a[1], z = a[2];
+	var w = m[3] * x + m[7] * y + m[11] * z + m[15];
+	w = w || 1;
+	out[0] = (m[0] * x + m[4] * y + m[8] * z + m[12]) / w;
+	out[1] = (m[1] * x + m[5] * y + m[9] * z + m[13]) / w;
+	out[2] = (m[2] * x + m[6] * y + m[10] * z + m[14]) / w;
+	return out;
+}
+/**
+* Transforms the vec3 with a mat3.
+*
+* @param {vec3} out the receiving vector
+* @param {ReadonlyVec3} a the vector to transform
+* @param {ReadonlyMat3} m the 3x3 matrix to transform with
+* @returns {vec3} out
+*/
+function transformMat3$1(out, a, m) {
+	var x = a[0], y = a[1], z = a[2];
+	out[0] = x * m[0] + y * m[3] + z * m[6];
+	out[1] = x * m[1] + y * m[4] + z * m[7];
+	out[2] = x * m[2] + y * m[5] + z * m[8];
+	return out;
+}
+/**
+* Transforms the vec3 with a quat
+* Can also be used for dual quaternions. (Multiply it with the real part)
+*
+* @param {vec3} out the receiving vector
+* @param {ReadonlyVec3} a the vector to transform
+* @param {ReadonlyQuat} q normalized quaternion to transform with
+* @returns {vec3} out
+*/
+function transformQuat$1(out, a, q) {
+	var qx = q[0], qy = q[1], qz = q[2], qw = q[3];
+	var vx = a[0], vy = a[1], vz = a[2];
+	var tx = qy * vz - qz * vy;
+	var ty = qz * vx - qx * vz;
+	var tz = qx * vy - qy * vx;
+	tx = tx + tx;
+	ty = ty + ty;
+	tz = tz + tz;
+	out[0] = vx + qw * tx + qy * tz - qz * ty;
+	out[1] = vy + qw * ty + qz * tx - qx * tz;
+	out[2] = vz + qw * tz + qx * ty - qy * tx;
+	return out;
+}
+/**
+* Rotate a 3D vector around the x-axis
+* @param {vec3} out The receiving vec3
+* @param {ReadonlyVec3} a The vec3 point to rotate
+* @param {ReadonlyVec3} b The origin of the rotation
+* @param {Number} rad The angle of rotation in radians
+* @returns {vec3} out
+*/
+function rotateX$2(out, a, b, rad) {
+	var p = [], r = [];
+	p[0] = a[0] - b[0];
+	p[1] = a[1] - b[1];
+	p[2] = a[2] - b[2];
+	r[0] = p[0];
+	r[1] = p[1] * Math.cos(rad) - p[2] * Math.sin(rad);
+	r[2] = p[1] * Math.sin(rad) + p[2] * Math.cos(rad);
+	out[0] = r[0] + b[0];
+	out[1] = r[1] + b[1];
+	out[2] = r[2] + b[2];
+	return out;
+}
+/**
+* Rotate a 3D vector around the y-axis
+* @param {vec3} out The receiving vec3
+* @param {ReadonlyVec3} a The vec3 point to rotate
+* @param {ReadonlyVec3} b The origin of the rotation
+* @param {Number} rad The angle of rotation in radians
+* @returns {vec3} out
+*/
+function rotateY$2(out, a, b, rad) {
+	var p = [], r = [];
+	p[0] = a[0] - b[0];
+	p[1] = a[1] - b[1];
+	p[2] = a[2] - b[2];
+	r[0] = p[2] * Math.sin(rad) + p[0] * Math.cos(rad);
+	r[1] = p[1];
+	r[2] = p[2] * Math.cos(rad) - p[0] * Math.sin(rad);
+	out[0] = r[0] + b[0];
+	out[1] = r[1] + b[1];
+	out[2] = r[2] + b[2];
+	return out;
+}
+/**
+* Rotate a 3D vector around the z-axis
+* @param {vec3} out The receiving vec3
+* @param {ReadonlyVec3} a The vec3 point to rotate
+* @param {ReadonlyVec3} b The origin of the rotation
+* @param {Number} rad The angle of rotation in radians
+* @returns {vec3} out
+*/
+function rotateZ$2(out, a, b, rad) {
+	var p = [], r = [];
+	p[0] = a[0] - b[0];
+	p[1] = a[1] - b[1];
+	p[2] = a[2] - b[2];
+	r[0] = p[0] * Math.cos(rad) - p[1] * Math.sin(rad);
+	r[1] = p[0] * Math.sin(rad) + p[1] * Math.cos(rad);
+	r[2] = p[2];
+	out[0] = r[0] + b[0];
+	out[1] = r[1] + b[1];
+	out[2] = r[2] + b[2];
+	return out;
+}
+/**
+* Set the components of a vec3 to zero
+*
+* @param {vec3} out the receiving vector
+* @returns {vec3} out
+*/
+function zero$2(out) {
+	out[0] = 0;
+	out[1] = 0;
+	out[2] = 0;
+	return out;
+}
+/**
+* Alias for {@link vec3.subtract}
+* @function
+*/
+var sub$2 = subtract$2;
+/**
 * Alias for {@link vec3.length}
 * @function
 */
@@ -561,6 +1461,53 @@ function create$3() {
 	return out;
 }
 /**
+* Creates a new vec4 initialized with the given values
+*
+* @param {Number} x X component
+* @param {Number} y Y component
+* @param {Number} z Z component
+* @param {Number} w W component
+* @returns {vec4} a new 4D vector
+*/
+function fromValues$3(x, y, z, w) {
+	var out = new ARRAY_TYPE(4);
+	out[0] = x;
+	out[1] = y;
+	out[2] = z;
+	out[3] = w;
+	return out;
+}
+/**
+* Multiplies two vec4's
+*
+* @param {vec4} out the receiving vector
+* @param {ReadonlyVec4} a the first operand
+* @param {ReadonlyVec4} b the second operand
+* @returns {vec4} out
+*/
+function multiply$3(out, a, b) {
+	out[0] = a[0] * b[0];
+	out[1] = a[1] * b[1];
+	out[2] = a[2] * b[2];
+	out[3] = a[3] * b[3];
+	return out;
+}
+/**
+* Scales a vec4 by a scalar number
+*
+* @param {vec4} out the receiving vector
+* @param {ReadonlyVec4} a the vector to scale
+* @param {Number} b amount to scale the vector by
+* @returns {vec4} out
+*/
+function scale$3(out, a, b) {
+	out[0] = a[0] * b;
+	out[1] = a[1] * b;
+	out[2] = a[2] * b;
+	out[3] = a[3] * b;
+	return out;
+}
+/**
 * Normalize a vec4
 *
 * @param {vec4} out the receiving vector
@@ -596,6 +1543,11 @@ function transformMat4$1(out, a, m) {
 	out[3] = m[3] * x + m[7] * y + m[11] * z + m[15] * w;
 	return out;
 }
+/**
+* Alias for {@link vec4.multiply}
+* @function
+*/
+var mul$3 = multiply$3;
 (function() {
 	var vec = create$3();
 	return function(a, stride, offset, count, fn, arg) {
@@ -653,6 +1605,23 @@ function setAxisAngle(out, axis, rad) {
 	out[1] = s * axis[1];
 	out[2] = s * axis[2];
 	out[3] = Math.cos(rad);
+	return out;
+}
+/**
+* Multiplies two quat's
+*
+* @param {quat} out the receiving quaternion
+* @param {ReadonlyQuat} a the first operand
+* @param {ReadonlyQuat} b the second operand
+* @returns {quat} out
+*/
+function multiply$2(out, a, b) {
+	var ax = a[0], ay = a[1], az = a[2], aw = a[3];
+	var bx = b[0], by = b[1], bz = b[2], bw = b[3];
+	out[0] = ax * bw + aw * bx + ay * bz - az * by;
+	out[1] = ay * bw + aw * by + az * bx - ax * bz;
+	out[2] = az * bw + aw * bz + ax * by - ay * bx;
+	out[3] = aw * bw - ax * bx - ay * by - az * bz;
 	return out;
 }
 /**
@@ -726,6 +1695,81 @@ function fromMat3(out, m) {
 	}
 	return out;
 }
+/**
+* Creates a quaternion from the given euler angle x, y, z using the provided intrinsic order for the conversion.
+*
+* @param {quat} out the receiving quaternion
+* @param {Number} x Angle to rotate around X axis in degrees.
+* @param {Number} y Angle to rotate around Y axis in degrees.
+* @param {Number} z Angle to rotate around Z axis in degrees.
+* @param {'xyz'|'xzy'|'yxz'|'yzx'|'zxy'|'zyx'} order Intrinsic order for conversion, default is zyx.
+* @returns {quat} out
+* @function
+*/
+function fromEuler(out, x, y, z) {
+	var order = arguments.length > 4 && arguments[4] !== void 0 ? arguments[4] : "zyx";
+	var halfToRad = Math.PI / 360;
+	x *= halfToRad;
+	z *= halfToRad;
+	y *= halfToRad;
+	var sx = Math.sin(x);
+	var cx = Math.cos(x);
+	var sy = Math.sin(y);
+	var cy = Math.cos(y);
+	var sz = Math.sin(z);
+	var cz = Math.cos(z);
+	switch (order) {
+		case "xyz":
+			out[0] = sx * cy * cz + cx * sy * sz;
+			out[1] = cx * sy * cz - sx * cy * sz;
+			out[2] = cx * cy * sz + sx * sy * cz;
+			out[3] = cx * cy * cz - sx * sy * sz;
+			break;
+		case "xzy":
+			out[0] = sx * cy * cz - cx * sy * sz;
+			out[1] = cx * sy * cz - sx * cy * sz;
+			out[2] = cx * cy * sz + sx * sy * cz;
+			out[3] = cx * cy * cz + sx * sy * sz;
+			break;
+		case "yxz":
+			out[0] = sx * cy * cz + cx * sy * sz;
+			out[1] = cx * sy * cz - sx * cy * sz;
+			out[2] = cx * cy * sz - sx * sy * cz;
+			out[3] = cx * cy * cz + sx * sy * sz;
+			break;
+		case "yzx":
+			out[0] = sx * cy * cz + cx * sy * sz;
+			out[1] = cx * sy * cz + sx * cy * sz;
+			out[2] = cx * cy * sz - sx * sy * cz;
+			out[3] = cx * cy * cz - sx * sy * sz;
+			break;
+		case "zxy":
+			out[0] = sx * cy * cz - cx * sy * sz;
+			out[1] = cx * sy * cz + sx * cy * sz;
+			out[2] = cx * cy * sz + sx * sy * cz;
+			out[3] = cx * cy * cz - sx * sy * sz;
+			break;
+		case "zyx":
+			out[0] = sx * cy * cz - cx * sy * sz;
+			out[1] = cx * sy * cz + sx * cy * sz;
+			out[2] = cx * cy * sz - sx * sy * cz;
+			out[3] = cx * cy * cz + sx * sy * sz;
+			break;
+		default: throw new Error("Unknown angle order " + order);
+	}
+	return out;
+}
+/**
+* Creates a new quat initialized with the given values
+*
+* @param {Number} x X component
+* @param {Number} y Y component
+* @param {Number} z Z component
+* @param {Number} w W component
+* @returns {quat} a new quaternion
+* @function
+*/
+var fromValues$2 = fromValues$3;
 /**
 * Normalize a quat
 *
@@ -805,6 +1849,78 @@ function create() {
 	}
 	return out;
 }
+/**
+* Creates a new vec2 initialized with the given values
+*
+* @param {Number} x X component
+* @param {Number} y Y component
+* @returns {vec2} a new 2D vector
+*/
+function fromValues(x, y) {
+	var out = new ARRAY_TYPE(2);
+	out[0] = x;
+	out[1] = y;
+	return out;
+}
+/**
+* Scales a vec2 by a scalar number
+*
+* @param {vec2} out the receiving vector
+* @param {ReadonlyVec2} a the vector to scale
+* @param {Number} b amount to scale the vector by
+* @returns {vec2} out
+*/
+function scale(out, a, b) {
+	out[0] = a[0] * b;
+	out[1] = a[1] * b;
+	return out;
+}
+/**
+* Calculates the length of a vec2
+*
+* @param {ReadonlyVec2} a vector to calculate length of
+* @returns {Number} length of a
+*/
+function length(a) {
+	var x = a[0], y = a[1];
+	return Math.sqrt(x * x + y * y);
+}
+/**
+* Calculates the squared length of a vec2
+*
+* @param {ReadonlyVec2} a vector to calculate squared length of
+* @returns {Number} squared length of a
+*/
+function squaredLength(a) {
+	var x = a[0], y = a[1];
+	return x * x + y * y;
+}
+/**
+* Calculates the dot product of two vec2's
+*
+* @param {ReadonlyVec2} a the first operand
+* @param {ReadonlyVec2} b the second operand
+* @returns {Number} dot product of a and b
+*/
+function dot$1(a, b) {
+	return a[0] * b[0] + a[1] * b[1];
+}
+/**
+* Set the components of a vec2 to zero
+*
+* @param {vec2} out the receiving vector
+* @returns {vec2} out
+*/
+function zero(out) {
+	out[0] = 0;
+	out[1] = 0;
+	return out;
+}
+/**
+* Alias for {@link vec2.squaredLength}
+* @function
+*/
+var sqrLen = squaredLength;
 (function() {
 	var vec = create();
 	return function(a, stride, offset, count, fn, arg) {
@@ -839,6 +1955,22 @@ function create() {
 */
 const EXTENT$1 = 8192;
 //#endregion
+//#region src/source/pixels_to_tile_units.ts
+/**
+* Converts a pixel value at a the given zoom level to tile units.
+*
+* The shaders mostly calculate everything in tile units so style
+* properties need to be converted from pixels to tile units using this.
+*
+* For example, a translation by 30 pixels at zoom 6.5 will be a
+* translation by pixelsToTileUnits(30, 6.5) tile units.
+*
+* @returns value in tile units
+*/
+function pixelsToTileUnits(tile, pixelValue, z) {
+	return pixelValue * (EXTENT$1 / (tile.tileSize * Math.pow(2, z - tile.tileID.overscaledZ)));
+}
+//#endregion
 //#region src/util/util.ts
 const JSON_PREFIX = "__$json__:";
 /**
@@ -849,6 +1981,242 @@ const JSON_PREFIX = "__$json__:";
 function ensureError(e) {
 	if (e instanceof Error) return e;
 	return new Error(typeof e === "string" ? e : String(e));
+}
+/**
+* Returns a new 64 bit float vec4 of zeroes.
+*/
+function createVec4f64() {
+	return /* @__PURE__ */ new Float64Array(4);
+}
+/**
+* Returns a new 64 bit float vec3 of zeroes.
+*/
+function createVec3f64() {
+	return /* @__PURE__ */ new Float64Array(3);
+}
+/**
+* Returns a new 64 bit float mat4 of zeroes.
+*/
+function createMat4f64() {
+	return /* @__PURE__ */ new Float64Array(16);
+}
+/**
+* Returns a new 64 bit float mat4 set to identity.
+*/
+function createIdentityMat4f64() {
+	const m = /* @__PURE__ */ new Float64Array(16);
+	identity$2(m);
+	return m;
+}
+/**
+* Returns a new 32 bit float mat4 set to identity.
+*/
+function createIdentityMat4f32() {
+	const m = /* @__PURE__ */ new Float32Array(16);
+	identity$2(m);
+	return m;
+}
+/**
+* Returns a translation in tile units that correctly incorporates the view angle and the *-translate and *-translate-anchor properties.
+* @param inViewportPixelUnitsUnits - True when the units accepted by the matrix are in viewport pixels instead of tile units.
+*/
+function translatePosition(transform, tile, translate, translateAnchor, inViewportPixelUnitsUnits = false) {
+	if (!translate[0] && !translate[1]) return [0, 0];
+	const angle = inViewportPixelUnitsUnits ? translateAnchor === "map" ? -transform.bearingInRadians : 0 : translateAnchor === "viewport" ? transform.bearingInRadians : 0;
+	if (angle) {
+		const sinA = Math.sin(angle);
+		const cosA = Math.cos(angle);
+		translate = [translate[0] * cosA - translate[1] * sinA, translate[0] * sinA + translate[1] * cosA];
+	}
+	return [inViewportPixelUnitsUnits ? translate[0] : pixelsToTileUnits(tile, translate[0], transform.zoom), inViewportPixelUnitsUnits ? translate[1] : pixelsToTileUnits(tile, translate[1], transform.zoom)];
+}
+/**
+* Returns the signed distance between a point and a plane.
+* @param plane - The plane equation, in the form where the first three components are the normal and the fourth component is the plane's distance from origin along normal.
+* @param point - The point whose distance from plane is returned.
+* @returns Signed distance of the point from the plane. Positive distances are in the half space where the plane normal points to, negative otherwise.
+*/
+function pointPlaneSignedDistance(plane, point) {
+	return plane[0] * point[0] + plane[1] * point[1] + plane[2] * point[2] + plane[3];
+}
+/**
+* Finds an intersection points of three planes. Returns `null` if no such (single) point exists.
+* The planes *must* be in Hessian normal form - their xyz components must form a unit vector.
+*/
+function threePlaneIntersection(plane0, plane1, plane2) {
+	const det = determinant$1([
+		plane0[0],
+		plane0[1],
+		plane0[2],
+		plane1[0],
+		plane1[1],
+		plane1[2],
+		plane2[0],
+		plane2[1],
+		plane2[2]
+	]);
+	if (det === 0) return null;
+	const cross12 = cross$2([], [
+		plane1[0],
+		plane1[1],
+		plane1[2]
+	], [
+		plane2[0],
+		plane2[1],
+		plane2[2]
+	]);
+	const cross20 = cross$2([], [
+		plane2[0],
+		plane2[1],
+		plane2[2]
+	], [
+		plane0[0],
+		plane0[1],
+		plane0[2]
+	]);
+	const cross01 = cross$2([], [
+		plane0[0],
+		plane0[1],
+		plane0[2]
+	], [
+		plane1[0],
+		plane1[1],
+		plane1[2]
+	]);
+	const sum = scale$4([], cross12, -plane0[3]);
+	add$4(sum, sum, scale$4([], cross20, -plane1[3]));
+	add$4(sum, sum, scale$4([], cross01, -plane2[3]));
+	scale$4(sum, sum, 1 / det);
+	return sum;
+}
+/**
+* Returns a parameter `t` such that the point obtained by
+* `origin + direction * t` lies on the given plane.
+* If the ray is parallel to the plane, returns null.
+* Returns a negative value if the ray is pointing away from the plane.
+* Direction does not need to be normalized.
+*/
+function rayPlaneIntersection(origin, direction, plane) {
+	const dotOriginPlane = origin[0] * plane[0] + origin[1] * plane[1] + origin[2] * plane[2];
+	const dotDirectionPlane = direction[0] * plane[0] + direction[1] * plane[1] + direction[2] * plane[2];
+	if (dotDirectionPlane === 0) return null;
+	return (-dotOriginPlane - plane[3]) / dotDirectionPlane;
+}
+/**
+* Returns the angle in radians between two 2D vectors.
+* The angle is signed and describes how much the first vector would need to be be rotated clockwise
+* (assuming X is right and Y is down) so that it points in the same direction as the second vector.
+* @param vec1x - The X component of the first vector.
+* @param vec1y - The Y component of the first vector.
+* @param vec2x - The X component of the second vector.
+* @param vec2y - The Y component of the second vector.
+* @returns The signed angle between the two vectors, in range -PI..PI.
+*/
+function angleToRotateBetweenVectors2D(vec1x, vec1y, vec2x, vec2y) {
+	const length1 = Math.sqrt(vec1x * vec1x + vec1y * vec1y);
+	const length2 = Math.sqrt(vec2x * vec2x + vec2y * vec2y);
+	vec1x /= length1;
+	vec1y /= length1;
+	vec2x /= length2;
+	vec2y /= length2;
+	const dot = vec1x * vec2x + vec1y * vec2y;
+	const angle = Math.acos(dot);
+	if (-vec1y * vec2x + vec1x * vec2y > 0) return angle;
+	else return -angle;
+}
+/**
+* For two angles in degrees, returns how many degrees to add to the first angle in order to obtain the second angle.
+* The returned difference value is always the shorted of the two - its absolute value is never greater than 180°.
+*/
+function differenceOfAnglesDegrees(degreesA, degreesB) {
+	const a = mod(degreesA, 360);
+	const b = mod(degreesB, 360);
+	const diff1 = b - a;
+	const diff2 = b > a ? diff1 - 360 : diff1 + 360;
+	if (Math.abs(diff1) < Math.abs(diff2)) return diff1;
+	else return diff2;
+}
+/**
+* When given two angles in radians, returns the angular distance between them - the shorter one of the two possible arcs.
+*/
+function distanceOfAnglesRadians(radiansA, radiansB) {
+	const a = mod(radiansA, Math.PI * 2);
+	const b = mod(radiansB, Math.PI * 2);
+	return Math.min(Math.abs(a - b), Math.abs(a - b + Math.PI * 2), Math.abs(a - b - Math.PI * 2));
+}
+/**
+* Modulo function, as opposed to javascript's `%`, which is a remainder.
+* This functions will return positive values, even if the first operand is negative.
+*/
+function mod(n, m) {
+	return (n % m + m) % m;
+}
+/**
+* Takes a value in *old range*, linearly maps that range to *new range*, and returns the value in that new range.
+* Additionally, if the value is outside *old range*, it is clamped inside it.
+* Also works if one of the ranges is flipped (its `min` being larger than `max`).
+*/
+function remapSaturate(value, oldRangeMin, oldRangeMax, newRangeMin, newRangeMax) {
+	return lerp(newRangeMin, newRangeMax, clamp$2((value - oldRangeMin) / (oldRangeMax - oldRangeMin), 0, 1));
+}
+/**
+* Linearly interpolate between two values, similar to `mix` function from GLSL. No clamping is done.
+* @param a - The first value to interpolate. This value is returned when mix=0.
+* @param b - The second value to interpolate. This value is returned when mix=1.
+* @param mix - The interpolation factor. Range 0..1 interpolates between `a` and `b`, but values outside this range are also accepted.
+*/
+function lerp(a, b, mix) {
+	return a * (1 - mix) + b * mix;
+}
+/**
+* For a given collection of 2D points, returns their axis-aligned bounding box,
+* in the format [minX, minY, maxX, maxY].
+*/
+function getAABB(points) {
+	let tlX = Infinity;
+	let tlY = Infinity;
+	let brX = -Infinity;
+	let brY = -Infinity;
+	for (const p of points) {
+		tlX = Math.min(tlX, p.x);
+		tlY = Math.min(tlY, p.y);
+		brX = Math.max(brX, p.x);
+		brY = Math.max(brY, p.y);
+	}
+	return [
+		tlX,
+		tlY,
+		brX,
+		brY
+	];
+}
+/**
+* For a given set of tile ids, returns the edge tile ids for the bounding box.
+*/
+function getEdgeTiles(tileIDs) {
+	if (!tileIDs.length) return /* @__PURE__ */ new Set();
+	const targetZ = Math.max(...tileIDs.map((id) => id.canonical.z));
+	let minX = Infinity, maxX = -Infinity;
+	let minY = Infinity, maxY = -Infinity;
+	const projected = [];
+	for (const id of tileIDs) {
+		const { x, y, z } = id.canonical;
+		const scale = Math.pow(2, targetZ - z);
+		const px = x * scale;
+		const py = y * scale;
+		projected.push({
+			id,
+			x: px,
+			y: py
+		});
+		if (px < minX) minX = px;
+		if (px > maxX) maxX = px;
+		if (py < minY) minY = py;
+		if (py > maxY) maxY = py;
+	}
+	const edgeTiles = /* @__PURE__ */ new Set();
+	for (const p of projected) if (p.x === minX || p.x === maxX || p.y === minY || p.y === maxY) edgeTiles.add(p.id);
+	return edgeTiles;
 }
 /**
 * Given a value `t` that varies between 0 and 1, return
@@ -873,7 +2241,11 @@ function easeCubicInOut(t) {
 function bezier(p1x, p1y, p2x, p2y) {
 	return unitBezier$1(p1x, p1y, p2x, p2y);
 }
-bezier(.25, .1, .25, 1);
+/**
+* A default bezier-curve powered easing function with
+* control points (0.25, 0.1) and (0.25, 1)
+*/
+const defaultEasing = bezier(.25, .1, .25, 1);
 /**
 * constrain n to the given range via min + max
 *
@@ -903,10 +2275,72 @@ function extend(dest, ...sources) {
 	return dest;
 }
 /**
+* Given an object and a number of properties as strings, return version
+* of that object with only those properties.
+*
+* @param src - the object
+* @param properties - an array of property names chosen
+* to appear on the resulting object.
+* @returns object with limited properties.
+* @example
+* ```ts
+* let foo = { name: 'Charlie', age: 10 };
+* let justName = pick(foo, ['name']); // justName = { name: 'Charlie' }
+* ```
+*/
+function pick(src, properties) {
+	const result = {};
+	for (const k of properties) if (k in src) result[k] = src[k];
+	return result;
+}
+let id = 1;
+/**
+* Return a unique numeric id, starting at 1 and incrementing with
+* each call.
+*
+* @returns unique numeric id.
+*/
+function uniqueId() {
+	return id++;
+}
+/**
 * Return whether a given value is a power of two
 */
 function isPowerOfTwo(value) {
 	return Math.log(value) / Math.LN2 % 1 === 0;
+}
+/**
+* Return the next power of two, or the input value if already a power of two
+*/
+function nextPowerOfTwo(value) {
+	if (value <= 1) return 1;
+	return Math.pow(2, Math.ceil(Math.log(value) / Math.LN2));
+}
+/**
+* Computes scaling from zoom level.
+*/
+function zoomScale(zoom) {
+	return Math.pow(2, zoom);
+}
+/**
+* Computes zoom level from scaling.
+*/
+function scaleZoom(scale) {
+	return Math.log(scale) / Math.LN2;
+}
+/**
+* Evaluates the snapped zoom level based on zoomSnap. If zoomSnap is 0 or less, the zoom level is returned unchanged.
+* If delta is provided, it performs directional snapping (ceil for zoom-in, floor for zoom-out).
+* @param zoom - The input zoom level
+* @param zoomSnap - The grid interval to snap to, e.g. 1.0 for 1.0 zoom levels, 0.5 for 0.5 zoom levels, etc.
+* @param delta - Optional scroll delta or direction. If positive, snaps up; if negative, snaps down.
+* @returns The snapped zoom level
+*/
+function evaluateZoomSnap(zoom, zoomSnap, delta) {
+	if (zoomSnap <= 0) return zoom;
+	const inv = 1 / zoomSnap;
+	if (delta === void 0 || Math.abs(delta) < 1e-10) return Math.round(zoom * inv) / inv;
+	return (delta > 0 ? Math.ceil(zoom * inv - 1e-9) : Math.floor(zoom * inv + 1e-10)) / inv;
 }
 /**
 * Create an object by mapping all the values of an existing object while
@@ -973,6 +2407,45 @@ function isCounterClockwise(a, b, c) {
 	return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
 }
 /**
+* For two lines a and b in 2d space, defined by any two points along the lines,
+* find the intersection point, or return null if the lines are parallel
+*
+* @param a1 - First point on line a
+* @param a2 - Second point on line a
+* @param b1 - First point on line b
+* @param b2 - Second point on line b
+*
+* @returns the intersection point of the two lines or null if they are parallel
+*/
+function findLineIntersection(a1, a2, b1, b2) {
+	const aDeltaY = a2.y - a1.y;
+	const aDeltaX = a2.x - a1.x;
+	const bDeltaY = b2.y - b1.y;
+	const bDeltaX = b2.x - b1.x;
+	const denominator = bDeltaY * aDeltaX - bDeltaX * aDeltaY;
+	if (denominator === 0) return null;
+	const originDeltaY = a1.y - b1.y;
+	const originDeltaX = a1.x - b1.x;
+	const aInterpolation = (bDeltaX * originDeltaY - bDeltaY * originDeltaX) / denominator;
+	return new Point(a1.x + aInterpolation * aDeltaX, a1.y + aInterpolation * aDeltaY);
+}
+/**
+* Converts spherical coordinates to cartesian coordinates.
+*
+* @param spherical - Spherical coordinates, in [radial, azimuthal, polar]
+* @returns cartesian coordinates in [x, y, z]
+*/
+function sphericalToCartesian([r, azimuthal, polar]) {
+	azimuthal += 90;
+	azimuthal *= Math.PI / 180;
+	polar *= Math.PI / 180;
+	return [
+		r * Math.cos(azimuthal) * Math.sin(polar),
+		r * Math.sin(azimuthal) * Math.sin(polar),
+		r * Math.cos(polar)
+	];
+}
+/**
 *  Returns true if the when run in the web-worker context.
 *
 * @returns `true` if the when run in the web-worker context.
@@ -980,9 +2453,93 @@ function isCounterClockwise(a, b, c) {
 function isWorker(self) {
 	return typeof WorkerGlobalScope !== "undefined" && typeof self !== "undefined" && self instanceof WorkerGlobalScope;
 }
+/**
+* Parses data from 'Cache-Control' headers.
+*
+* @param cacheControl - Value of 'Cache-Control' header
+* @returns object containing parsed header info.
+*/
+function parseCacheControl(cacheControl) {
+	const re = /(?:^|(?:\s*\,\s*))([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)(?:\=(?:([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)|(?:\"((?:[^"\\]|\\.)*)\")))?/g;
+	const header = {};
+	cacheControl.replace(re, ($0, $1, $2, $3) => {
+		const value = $2 || $3;
+		header[$1] = value ? value.toLowerCase() : true;
+		return "";
+	});
+	if (header["max-age"]) {
+		const maxAge = parseInt(header["max-age"], 10);
+		if (isNaN(maxAge)) delete header["max-age"];
+		else header["max-age"] = maxAge;
+	}
+	return header;
+}
+let _isSafari = null;
+/**
+* Returns true when run in WebKit derived browsers.
+* This is used as a workaround for a memory leak in Safari caused by using Transferable objects to
+* transfer data between WebWorkers and the main thread.
+* https://github.com/mapbox/mapbox-gl-js/issues/8771
+*
+* This should be removed once the underlying Safari issue is fixed.
+*
+* @param scope - Since this function is used both on the main thread and WebWorker context,
+*      let the calling scope pass in the global scope object.
+* @returns `true` when run in WebKit derived browsers.
+*/
+function isSafari(scope) {
+	if (_isSafari == null) {
+		const userAgent = scope.navigator ? scope.navigator.userAgent : null;
+		_isSafari = !!scope.safari || !!(userAgent && (/\b(iPad|iPhone|iPod)\b/.test(userAgent) || !!userAgent.match("Safari") && !userAgent.match("Chrome")));
+	}
+	return _isSafari;
+}
 function isImageBitmap(image) {
 	return typeof ImageBitmap !== "undefined" && image instanceof ImageBitmap;
 }
+/**
+* Converts an ArrayBuffer to an ImageBitmap.
+*
+* Used mostly for testing purposes only, because mocking libs don't know how to work with ArrayBuffers, but work
+* perfectly fine with ImageBitmaps. Might also be used for environments (other than testing) not supporting
+* ArrayBuffers.
+*
+* @param data - Data to convert
+* @returns - A  promise resolved when the conversion is finished
+*/
+const arrayBufferToImageBitmap = async (data, options) => {
+	const blob = new Blob([new Uint8Array(data)], { type: "image/png" });
+	try {
+		return createImageBitmap(blob, options);
+	} catch (e) {
+		throw new Error(`Could not load image because of ${ensureError(e).message}. Please make sure to use a supported image type such as PNG or JPEG. Note that SVGs are not supported.`);
+	}
+};
+const transparentPngUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII=";
+/**
+* Converts an ArrayBuffer to an HTMLImageElement.
+*
+* Used mostly for testing purposes only, because mocking libs don't know how to work with ArrayBuffers, but work
+* perfectly fine with ImageBitmaps. Might also be used for environments (other than testing) not supporting
+* ArrayBuffers.
+*
+* @param data - Data to convert
+* @returns - A promise resolved when the conversion is finished
+*/
+const arrayBufferToImage = (data) => {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.onload = () => {
+			resolve(img);
+			URL.revokeObjectURL(img.src);
+			img.onload = null;
+			window.requestAnimationFrame(() => img.src = transparentPngUrl);
+		};
+		img.onerror = () => reject(/* @__PURE__ */ new Error("Could not load image. Please make sure to use a supported image type such as PNG or JPEG. Note that SVGs are not supported."));
+		const blob = new Blob([new Uint8Array(data)], { type: "image/png" });
+		img.src = URL.createObjectURL(blob);
+	});
+};
 /**
 * Computes the webcodecs VideoFrame API options to select a rectangle out of
 * an image and write it into the destination rectangle.
@@ -1127,6 +2684,97 @@ function subscribe(target, message, listener, options) {
 function degreesToRadians(degrees) {
 	return degrees * Math.PI / 180;
 }
+/**
+* This method converts radians to degrees.
+* The return value is the degrees value.
+* @param degrees - The number of radians
+* @returns degrees
+*/
+function radiansToDegrees(degrees) {
+	return degrees / Math.PI * 180;
+}
+function rollPitchBearingEqual(a, b) {
+	return a.roll == b.roll && a.pitch == b.pitch && a.bearing == b.bearing;
+}
+/**
+* This method converts a rotation quaternion to roll, pitch, and bearing angles in degrees.
+* @param rotation - The rotation quaternion
+* @returns roll, pitch, and bearing angles in degrees
+*/
+function getRollPitchBearing(rotation) {
+	const m = /* @__PURE__ */ new Float64Array(9);
+	fromQuat$1(m, rotation);
+	const xAngle = radiansToDegrees(-Math.asin(clamp$2(m[2], -1, 1)));
+	let roll;
+	let bearing;
+	if (Math.hypot(m[5], m[8]) < .001) {
+		roll = 0;
+		bearing = -radiansToDegrees(Math.atan2(m[3], m[4]));
+	} else {
+		roll = radiansToDegrees(m[5] === 0 && m[8] === 0 ? 0 : Math.atan2(m[5], m[8]));
+		bearing = radiansToDegrees(m[1] === 0 && m[0] === 0 ? 0 : Math.atan2(m[1], m[0]));
+	}
+	return {
+		roll,
+		pitch: xAngle + 90,
+		bearing
+	};
+}
+function getAngleDelta(lastPoint, currentPoint, center) {
+	const pointVect = fromValues(currentPoint.x - center.x, currentPoint.y - center.y);
+	const lastPointVec = fromValues(lastPoint.x - center.x, lastPoint.y - center.y);
+	const crossProduct = pointVect[0] * lastPointVec[1] - pointVect[1] * lastPointVec[0];
+	return radiansToDegrees(Math.atan2(crossProduct, dot$1(pointVect, lastPointVec)));
+}
+/**
+* This method converts roll, pitch, and bearing angles in degrees to a rotation quaternion.
+* @param roll - Roll angle in degrees
+* @param pitch - Pitch angle in degrees
+* @param bearing - Bearing angle in degrees
+* @returns The rotation quaternion
+*/
+function rollPitchBearingToQuat(roll, pitch, bearing) {
+	const rotation = /* @__PURE__ */ new Float64Array(4);
+	fromEuler(rotation, roll, pitch - 90, bearing);
+	return rotation;
+}
+const MAX_VALID_LATITUDE = 85.051129;
+const touchableEvents = {
+	touchstart: true,
+	touchmove: true,
+	touchmoveWindow: true,
+	touchend: true,
+	touchcancel: true
+};
+const pointableEvents = {
+	dblclick: true,
+	click: true,
+	mouseover: true,
+	mouseout: true,
+	mousedown: true,
+	mousemove: true,
+	mousemoveWindow: true,
+	mouseup: true,
+	mouseupWindow: true,
+	contextmenu: true,
+	wheel: true
+};
+function isTouchableEvent(event, eventType) {
+	return touchableEvents[eventType] && "touches" in event;
+}
+/**
+* Checks if an event is a pointable event (mouse or wheel event).
+* Uses the event target's window context for cross-window support.
+*/
+function isPointableEvent(event, eventType) {
+	if (!pointableEvents[eventType]) return false;
+	const domEvent = event;
+	const targetWindow = (domEvent?.target)?.ownerDocument?.defaultView || window;
+	return domEvent instanceof targetWindow.MouseEvent || domEvent instanceof targetWindow.WheelEvent;
+}
+function isTouchableOrPointableType(eventType) {
+	return touchableEvents[eventType] || pointableEvents[eventType];
+}
 //#endregion
 //#region src/util/abort_error.ts
 /**
@@ -1158,130 +2806,385 @@ function throwIfAborted(signal) {
 	if (signal.aborted) throw new AbortError(signal.reason);
 }
 //#endregion
-//#region src/util/transferable_grid_index.ts
-const NUM_PARAMS = 3;
-var TransferableGridIndex = class TransferableGridIndex {
-	constructor(extent, n, padding) {
-		const cells = this.cells = [];
-		if (extent instanceof ArrayBuffer) {
-			this.arrayBuffer = extent;
-			const array = new Int32Array(this.arrayBuffer);
-			extent = array[0];
-			n = array[1];
-			padding = array[2];
-			this.d = n + 2 * padding;
-			for (let k = 0; k < this.d * this.d; k++) {
-				const start = array[NUM_PARAMS + k];
-				const end = array[NUM_PARAMS + k + 1];
-				cells.push(start === end ? null : array.subarray(start, end));
+//#region src/util/config.ts
+const config = {
+	MAX_PARALLEL_IMAGE_REQUESTS: 16,
+	MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME: 8,
+	MAX_TILE_CACHE_ZOOM_LEVELS: 5,
+	REGISTERED_PROTOCOLS: {},
+	WORKER_URL: ""
+};
+//#endregion
+//#region src/source/protocol_crud.ts
+function getProtocol(url) {
+	return config.REGISTERED_PROTOCOLS[url.substring(0, url.indexOf("://"))];
+}
+/**
+* Adds a custom load resource function that will be called when using a URL that starts with a custom url schema.
+* This will happen in the main thread, and workers might call it if they don't know how to handle the protocol.
+* The example below will be triggered for custom:// urls defined in the sources list in the style definitions.
+* The function passed will receive the request parameters and should return with the resulting resource.
+* `requestParameters.type` says which kind of resource is expected. A tile is an `ArrayBuffer`, for example
+* a non-compressed pbf vector tile. An image is either its encoded bytes or an `ImageBitmap`/`HTMLImageElement`,
+* which is used without decoding. See {@link AddProtocolResponseData} for every accepted shape.
+*
+* @param customProtocol - the protocol to hook, for example 'custom'
+* @param loadFn - the function to use when trying to fetch a tile specified by the customProtocol
+* @example
+* ```ts
+* // This will fetch a file using the fetch API (this is obviously a non interesting example...)
+* addProtocol('custom', async (params, abortController) => {
+*      const t = await fetch(`https://${params.url.split("://")[1]}`);
+*      if (t.status == 200) {
+*          const buffer = await t.arrayBuffer();
+*          return {data: buffer}
+*      } else {
+*          throw new Error(`Tile fetch error: ${t.statusText}`);
+*      }
+*  });
+* // the following is an example of a way to return an error when trying to load a tile
+* addProtocol('custom2', async (params, abortController) => {
+*      throw new Error('someErrorMessage');
+* });
+* // An image handler that draws or computes its tiles can return them decoded, as an ImageBitmap.
+* addProtocol('drawn', async (params, abortController) => {
+*      const canvas = new OffscreenCanvas(256, 256);
+*      // ... draw the tile ...
+*      return {data: await createImageBitmap(canvas)};
+* });
+* ```
+* @see [Add a COG raster source](https://maplibre.org/maplibre-gl-js/docs/examples/add-a-cog-raster-source/)
+* @see [Add Contour Lines](https://maplibre.org/maplibre-gl-js/docs/examples/add-contour-lines/)
+* @see [PMTiles source and protocol](https://maplibre.org/maplibre-gl-js/docs/examples/pmtiles-source-and-protocol/)
+* @see [Use addProtocol to Transform Feature Properties](https://maplibre.org/maplibre-gl-js/docs/examples/use-addprotocol-to-transform-feature-properties/)
+*/
+function addProtocol(customProtocol, loadFn) {
+	config.REGISTERED_PROTOCOLS[customProtocol] = loadFn;
+}
+/**
+* Removes a previously added protocol in the main thread.
+*
+* @param customProtocol - the custom protocol to remove registration for
+* @example
+* ```ts
+* removeProtocol('custom');
+* ```
+*/
+function removeProtocol(customProtocol) {
+	delete config.REGISTERED_PROTOCOLS[customProtocol];
+}
+//#endregion
+//#region src/util/ajax.ts
+/**
+* This is used to identify the global dispatcher id when sending a message from the worker without a target map id.
+*/
+const GLOBAL_DISPATCHER_ID = "global-dispatcher";
+/**
+* An error thrown when a HTTP request results in an error response.
+*/
+var AJAXError = class extends Error {
+	/**
+	* @param status - The response's HTTP status code.
+	* @param statusText - The response's HTTP status text.
+	* @param url - The request's URL.
+	* @param body - The response's body.
+	*/
+	constructor(status, statusText, url, body) {
+		super(`AJAXError: ${statusText} (${status}): ${url}`);
+		this.status = status;
+		this.statusText = statusText;
+		this.url = url;
+		this.body = body;
+	}
+};
+/**
+* Ensure that we're sending the correct referrer from blob URL worker bundles.
+* For files loaded from the local file system, `location.origin` will be set
+* to the string(!) "null" (Firefox), or "file://" (Chrome, Safari, Edge),
+* and we will set an empty referrer. Otherwise, we're using the document's URL.
+* If we're on a blob URL and parent window is cross-origin, parent.location throws
+* SecurityError DOMException, this means we are probably not in blob URL worker bundle.
+*/
+function getReferrer() {
+	if (isWorker(self)) return self.worker?.referrer;
+	if (window.location.protocol === "blob:") try {
+		return window.parent.location.href;
+	} catch {}
+	return window.location.href;
+}
+/**
+* Determines whether a URL is a file:// URL. This is obviously the case if it begins
+* with file://. Relative URLs are also file:// URLs iff the original document was loaded
+* via a file:// URL.
+* @param url - The URL to check
+* @returns `true` if the URL is a file:// URL, `false` otherwise
+*/
+const isFileURL = (url) => url.startsWith("file:") || getReferrer()?.startsWith("file:") && !/^\w+:/.test(url);
+async function makeFetchRequest(requestParameters, abortController) {
+	const request = new Request(requestParameters.url, {
+		method: requestParameters.method || "GET",
+		body: requestParameters.body,
+		credentials: requestParameters.credentials,
+		headers: requestParameters.headers,
+		cache: requestParameters.cache,
+		referrer: getReferrer(),
+		referrerPolicy: requestParameters.referrerPolicy,
+		signal: abortController.signal
+	});
+	if (requestParameters.type === "json" && !request.headers.has("Accept")) request.headers.set("Accept", "application/json");
+	let response;
+	try {
+		response = await fetch(request);
+	} catch (e) {
+		if (isAbortError(e)) throw e;
+		throw new AJAXError(0, ensureError(e).message, requestParameters.url, new Blob());
+	}
+	if (!response.ok) {
+		const body = await response.blob();
+		throw new AJAXError(response.status, response.statusText, requestParameters.url, body);
+	}
+	let parsePromise;
+	if (requestParameters.type === "arrayBuffer" || requestParameters.type === "image") parsePromise = response.arrayBuffer();
+	else if (requestParameters.type === "json") parsePromise = response.json();
+	else parsePromise = response.text();
+	const result = await parsePromise;
+	throwIfAborted(abortController.signal);
+	return {
+		data: result,
+		cacheControl: response.headers.get("Cache-Control"),
+		expires: response.headers.get("Expires"),
+		etag: response.headers.get("ETag")
+	};
+}
+function makeXMLHttpRequest(requestParameters, abortController) {
+	return new Promise((resolve, reject) => {
+		const xhr = new XMLHttpRequest();
+		xhr.open(requestParameters.method || "GET", requestParameters.url, true);
+		if (requestParameters.type === "arrayBuffer" || requestParameters.type === "image") xhr.responseType = "arraybuffer";
+		for (const k in requestParameters.headers) xhr.setRequestHeader(k, requestParameters.headers[k]);
+		if (requestParameters.type === "json") {
+			xhr.responseType = "text";
+			if (!requestParameters.headers?.Accept) xhr.setRequestHeader("Accept", "application/json");
+		}
+		xhr.withCredentials = requestParameters.credentials === "include";
+		xhr.onerror = () => {
+			reject(new Error(xhr.statusText));
+		};
+		xhr.onload = () => {
+			if (abortController.signal.aborted) return;
+			if ((xhr.status >= 200 && xhr.status < 300 || xhr.status === 0) && xhr.response !== null) {
+				let data = xhr.response;
+				if (requestParameters.type === "json") try {
+					data = JSON.parse(xhr.response);
+				} catch (err) {
+					reject(err);
+					return;
+				}
+				resolve({
+					data,
+					cacheControl: xhr.getResponseHeader("Cache-Control"),
+					expires: xhr.getResponseHeader("Expires"),
+					etag: xhr.getResponseHeader("ETag")
+				});
+			} else {
+				const body = new Blob([xhr.response], { type: xhr.getResponseHeader("Content-Type") });
+				reject(new AJAXError(xhr.status, xhr.statusText, requestParameters.url, body));
 			}
-			const keysOffset = array[NUM_PARAMS + cells.length];
-			const bboxesOffset = array[NUM_PARAMS + cells.length + 1];
-			this.keys = array.subarray(keysOffset, bboxesOffset);
-			this.bboxes = array.subarray(bboxesOffset);
-			this.insert = this._insertReadonly;
-		} else {
-			this.d = n + 2 * padding;
-			for (let i = 0; i < this.d * this.d; i++) cells.push([]);
-			this.keys = [];
-			this.bboxes = [];
+		};
+		abortController.signal.addEventListener("abort", () => {
+			xhr.abort();
+			reject(new AbortError(abortController.signal.reason));
+		});
+		xhr.send(requestParameters.body);
+	});
+}
+/**
+* We're trying to use the Fetch API if possible. However, requests for resources with the file:// URI scheme don't work with the Fetch API.
+* In this case we unconditionally use XHR on the current thread since referrers don't matter.
+* This method can also use the registered method if `addProtocol` was called.
+* @param requestParameters - The request parameters
+* @param abortController - The abort controller allowing to cancel the request
+* @returns a promise resolving to the response, including cache control and expiry data
+*/
+const makeRequest = async function(requestParameters, abortController) {
+	if (requestParameters.url.includes("://") && !/^https?:|^file:/.test(requestParameters.url)) {
+		const protocolLoadFn = getProtocol(requestParameters.url);
+		if (protocolLoadFn) {
+			const response = await protocolLoadFn(requestParameters, abortController);
+			if (!response.data && requestParameters.type === "arrayBuffer") return extend(response, { data: /* @__PURE__ */ new ArrayBuffer(0) });
+			return response;
 		}
-		this.n = n;
-		this.extent = extent;
-		this.padding = padding;
-		this.scale = n / extent;
-		this.uid = 0;
-		const p = padding / n * extent;
-		this.min = -p;
-		this.max = extent + p;
+		if (isWorker(self) && self.worker?.actor) return self.worker.actor.sendAsync({
+			type: "GR",
+			data: requestParameters,
+			targetMapId: GLOBAL_DISPATCHER_ID
+		}, abortController);
 	}
-	insert(key, x1, y1, x2, y2) {
-		this._forEachCell(x1, y1, x2, y2, this._insertCell, this.uid++, void 0, void 0);
-		this.keys.push(key);
-		this.bboxes.push(x1);
-		this.bboxes.push(y1);
-		this.bboxes.push(x2);
-		this.bboxes.push(y2);
+	if (!isFileURL(requestParameters.url)) {
+		if (fetch && Request && AbortController && Object.hasOwn(Request.prototype, "signal")) return makeFetchRequest(requestParameters, abortController);
+		if (isWorker(self) && self.worker?.actor) return self.worker.actor.sendAsync({
+			type: "GR",
+			data: requestParameters,
+			mustQueue: true,
+			targetMapId: GLOBAL_DISPATCHER_ID
+		}, abortController);
 	}
-	_insertReadonly() {
-		throw new Error("Cannot insert into a GridIndex created from an ArrayBuffer.");
+	return makeXMLHttpRequest(requestParameters, abortController);
+};
+const getJSON = (requestParameters, abortController) => {
+	return makeRequest(extend(requestParameters, { type: "json" }), abortController);
+};
+const getArrayBuffer = (requestParameters, abortController) => {
+	return makeRequest(extend(requestParameters, { type: "arrayBuffer" }), abortController);
+};
+/** 
+* Determines whether a URL is same origin as the current location. Supports relative URLs too.
+* 
+* A relative URL "/foo" or "./foo" will throw exception in URL's ctor,
+* try-catch is expansive so just use a heuristic check to avoid it
+* 
+* - Relative URL and empty URL are always same origin.
+* - data URL containing an image is always same origin.
+* - blob URL is checked using `URL` constructor by its parent URL; opaque blob URL is never same origin.
+* - Absolute URL is checked using `URL` constructor.
+* 
+* Checks blob URL before relative URL because opaque blob URL does not contain `://` too.
+* 
+* @param inComingUrl - The URL to check
+* @returns `true` if the URL is same origin as current location, `false` otherwise
+*/
+function sameOrigin(inComingUrl) {
+	if (!inComingUrl) return true;
+	if (inComingUrl.startsWith("data:image/")) return true;
+	if (inComingUrl.startsWith("blob:")) {
+		inComingUrl = inComingUrl.slice(5);
+		if (inComingUrl.startsWith("null")) return false;
 	}
-	_insertCell(x1, y1, x2, y2, cellIndex, uid) {
-		this.cells[cellIndex].push(uid);
-	}
-	query(x1, y1, x2, y2, intersectionTest) {
-		const min = this.min;
-		const max = this.max;
-		if (x1 <= min && y1 <= min && max <= x2 && max <= y2 && !intersectionTest) return [...this.keys];
-		else {
-			const result = [];
-			this._forEachCell(x1, y1, x2, y2, this._queryCell, result, {}, intersectionTest);
-			return result;
+	if (inComingUrl.indexOf("://") <= 0) return true;
+	const urlObj = new URL(inComingUrl);
+	const locationObj = window.location;
+	return urlObj.protocol === locationObj.protocol && urlObj.host === locationObj.host;
+}
+const getVideo = (urls) => {
+	const video = window.document.createElement("video");
+	video.muted = true;
+	return new Promise((resolve) => {
+		video.onloadstart = () => {
+			resolve(video);
+		};
+		for (const url of urls) {
+			const s = window.document.createElement("source");
+			if (!sameOrigin(url)) video.crossOrigin = "Anonymous";
+			s.src = url;
+			video.appendChild(s);
 		}
+	});
+};
+//#endregion
+//#region src/util/evented.ts
+function _addEventListener(type, listener, listenerList) {
+	if (!listenerList[type]?.includes(listener)) {
+		listenerList[type] ||= [];
+		listenerList[type].push(listener);
 	}
-	_queryCell(x1, y1, x2, y2, cellIndex, result, seenUids, intersectionTest) {
-		const cell = this.cells[cellIndex];
-		if (cell !== null) {
-			const keys = this.keys;
-			const bboxes = this.bboxes;
-			for (const uid of cell) if (seenUids[uid] === void 0) {
-				const offset = uid * 4;
-				if (intersectionTest ? intersectionTest(bboxes[offset + 0], bboxes[offset + 1], bboxes[offset + 2], bboxes[offset + 3]) : x1 <= bboxes[offset + 2] && y1 <= bboxes[offset + 3] && x2 >= bboxes[offset + 0] && y2 >= bboxes[offset + 1]) {
-					seenUids[uid] = true;
-					result.push(keys[uid]);
-				} else seenUids[uid] = false;
+}
+function _removeEventListener(type, listener, listenerList) {
+	if (listenerList?.[type]) {
+		const index = listenerList[type].indexOf(listener);
+		if (index !== -1) listenerList[type].splice(index, 1);
+	}
+}
+/**
+* The event class
+*/
+var Event = class {
+	constructor(type, data = {}) {
+		extend(this, data);
+		this.type = type;
+	}
+};
+/**
+* An error event
+*/
+var ErrorEvent = class extends Event {
+	constructor(error, data = {}) {
+		super("error", extend({ error }, data));
+	}
+};
+/**
+* Methods mixed in to other classes for event capabilities.
+*
+* @group Event Related
+*/
+var Evented = class {
+	/**
+	* Adds a listener to a specified event type.
+	*
+	* @param type - The event type to add a listen for.
+	* @param listener - The function to be called when the event is fired.
+	* The listener function is called with the data object passed to `fire`,
+	* extended with `target` and `type` properties.
+	*/
+	on(type, listener) {
+		this._listeners ||= {};
+		_addEventListener(type, listener, this._listeners);
+		return { unsubscribe: () => {
+			this.off(type, listener);
+		} };
+	}
+	/**
+	* Removes a previously registered event listener.
+	*
+	* @param type - The event type to remove listeners for.
+	* @param listener - The listener function to remove.
+	*/
+	off(type, listener) {
+		_removeEventListener(type, listener, this._listeners);
+		_removeEventListener(type, listener, this._oneTimeListeners);
+		return this;
+	}
+	once(type, listener) {
+		if (!listener) return new Promise((resolve) => this.once(type, resolve));
+		this._oneTimeListeners ||= {};
+		_addEventListener(type, listener, this._oneTimeListeners);
+		return this;
+	}
+	fire(event, properties) {
+		const firedEvent = typeof event === "string" ? new Event(event, properties || {}) : event;
+		const type = firedEvent.type;
+		if (this.listens(type)) {
+			firedEvent.target = this;
+			const listeners = this._listeners?.[type]?.slice() ?? [];
+			for (const listener of listeners) listener.call(this, firedEvent);
+			const oneTimeListeners = this._oneTimeListeners?.[type]?.slice() ?? [];
+			for (const listener of oneTimeListeners) {
+				_removeEventListener(type, listener, this._oneTimeListeners);
+				listener.call(this, firedEvent);
 			}
-		}
+			const parent = this._eventedParent;
+			if (parent) {
+				extend(firedEvent, typeof this._eventedParentData === "function" ? this._eventedParentData() : this._eventedParentData);
+				parent.fire(firedEvent);
+			}
+		} else if (firedEvent instanceof ErrorEvent) console.error(firedEvent.error);
+		return this;
 	}
-	_forEachCell(x1, y1, x2, y2, fn, arg1, arg2, intersectionTest) {
-		const cx1 = this._convertToCellCoord(x1);
-		const cy1 = this._convertToCellCoord(y1);
-		const cx2 = this._convertToCellCoord(x2);
-		const cy2 = this._convertToCellCoord(y2);
-		for (let x = cx1; x <= cx2; x++) for (let y = cy1; y <= cy2; y++) {
-			const cellIndex = this.d * y + x;
-			if (intersectionTest && !intersectionTest(this._convertFromCellCoord(x), this._convertFromCellCoord(y), this._convertFromCellCoord(x + 1), this._convertFromCellCoord(y + 1))) continue;
-			if (fn.call(this, x1, y1, x2, y2, cellIndex, arg1, arg2, intersectionTest)) return;
-		}
+	/**
+	* Returns a true if this instance of Evented or any forwardeed instances of Evented have a listener for the specified type.
+	*
+	* @param type - The event type
+	* @returns `true` if there is at least one registered listener for specified event type, `false` otherwise
+	*/
+	listens(type) {
+		return Boolean(this._listeners?.[type]?.length || this._oneTimeListeners?.[type]?.length || this._eventedParent?.listens(type));
 	}
-	_convertFromCellCoord(x) {
-		return (x - this.padding) / this.scale;
-	}
-	_convertToCellCoord(x) {
-		return Math.max(0, Math.min(this.d - 1, Math.floor(x * this.scale) + this.padding));
-	}
-	toArrayBuffer() {
-		if (this.arrayBuffer) return this.arrayBuffer;
-		const cells = this.cells;
-		const metadataLength = NUM_PARAMS + this.cells.length + 1 + 1;
-		let totalCellLength = 0;
-		for (const cell of this.cells) totalCellLength += cell.length;
-		const array = new Int32Array(metadataLength + totalCellLength + this.keys.length + this.bboxes.length);
-		array[0] = this.extent;
-		array[1] = this.n;
-		array[2] = this.padding;
-		let offset = metadataLength;
-		for (let k = 0; k < cells.length; k++) {
-			const cell = cells[k];
-			array[NUM_PARAMS + k] = offset;
-			array.set(cell, offset);
-			offset += cell.length;
-		}
-		array[NUM_PARAMS + cells.length] = offset;
-		array.set(this.keys, offset);
-		offset += this.keys.length;
-		array[NUM_PARAMS + cells.length + 1] = offset;
-		array.set(this.bboxes, offset);
-		offset += this.bboxes.length;
-		return array.buffer;
-	}
-	static serialize(grid, transferables) {
-		const buffer = grid.toArrayBuffer();
-		if (transferables) transferables.push(buffer);
-		return { buffer };
-	}
-	static deserialize(serialized) {
-		return new TransferableGridIndex(serialized.buffer);
+	/**
+	* Bubble all events fired by this instance of Evented to this parent instance of Evented.
+	*/
+	setEventedParent(parent, data) {
+		this._eventedParent = parent;
+		this._eventedParentData = data;
+		return this;
 	}
 };
 //#endregion
@@ -3963,6 +5866,377 @@ const refProperties = [
 	"filter",
 	"layout"
 ];
+//#endregion
+//#region node_modules/@maplibre/maplibre-gl-style-spec/dist/deref.mjs
+function deref(layer, parent) {
+	const result = {};
+	for (const k in layer) if (k !== "ref") result[k] = layer[k];
+	refProperties.forEach((k) => {
+		if (k in parent) result[k] = parent[k];
+	});
+	return result;
+}
+/**
+*
+* The input is not modified. The output may contain references to portions
+* of the input.
+*
+* @param layers - array of layers, some of which may contain `ref` properties
+* whose value is the `id` of another property
+* @returns a new array where such layers have been augmented with the 'type', 'source', etc. properties
+* from the parent layer, and the `ref` property has been removed.
+*/
+function derefLayers(layers) {
+	layers = layers.slice();
+	const map = Object.create(null);
+	for (let i = 0; i < layers.length; i++) map[layers[i].id] = layers[i];
+	for (let i = 0; i < layers.length; i++) if ("ref" in layers[i]) layers[i] = deref(layers[i], map[layers[i].ref]);
+	return layers;
+}
+//#endregion
+//#region node_modules/@maplibre/maplibre-gl-style-spec/dist/util/deep_equal.mjs
+/**
+* Deeply compares two object literals.
+*
+* @private
+*/
+function deepEqual(a, b) {
+	if (Array.isArray(a)) {
+		if (!Array.isArray(b) || a.length !== b.length) return false;
+		for (let i = 0; i < a.length; i++) if (!deepEqual(a[i], b[i])) return false;
+		return true;
+	}
+	if (typeof a === "object" && a !== null && b !== null) {
+		if (!(typeof b === "object")) return false;
+		if (Object.keys(a).length !== Object.keys(b).length) return false;
+		for (const key in a) if (!deepEqual(a[key], b[key])) return false;
+		return true;
+	}
+	return a === b;
+}
+//#endregion
+//#region node_modules/@maplibre/maplibre-gl-style-spec/dist/diff.mjs
+/**
+* The main reason for this method is to allow type check when adding a command to the array.
+* @param commands - The commands array to add to
+* @param command - The command to add
+*/
+function addCommand(commands, command) {
+	commands.push(command);
+}
+function addSource(sourceId, after, commands) {
+	addCommand(commands, {
+		command: "addSource",
+		args: [sourceId, after[sourceId]]
+	});
+}
+function removeSource(sourceId, commands, sourcesRemoved) {
+	addCommand(commands, {
+		command: "removeSource",
+		args: [sourceId]
+	});
+	sourcesRemoved[sourceId] = true;
+}
+function updateSource(sourceId, after, commands, sourcesRemoved) {
+	removeSource(sourceId, commands, sourcesRemoved);
+	addSource(sourceId, after, commands);
+}
+function canUpdateGeoJSON(before, after, sourceId) {
+	let prop;
+	for (prop in before[sourceId]) {
+		if (!Object.prototype.hasOwnProperty.call(before[sourceId], prop)) continue;
+		if (prop !== "data" && !deepEqual(before[sourceId][prop], after[sourceId][prop])) return false;
+	}
+	for (prop in after[sourceId]) {
+		if (!Object.prototype.hasOwnProperty.call(after[sourceId], prop)) continue;
+		if (prop !== "data" && !deepEqual(before[sourceId][prop], after[sourceId][prop])) return false;
+	}
+	return true;
+}
+function diffSources(before, after, commands, sourcesRemoved) {
+	before = before || {};
+	after = after || {};
+	let sourceId;
+	for (sourceId in before) {
+		if (!Object.prototype.hasOwnProperty.call(before, sourceId)) continue;
+		if (!Object.prototype.hasOwnProperty.call(after, sourceId)) removeSource(sourceId, commands, sourcesRemoved);
+	}
+	for (sourceId in after) {
+		if (!Object.prototype.hasOwnProperty.call(after, sourceId)) continue;
+		if (!Object.prototype.hasOwnProperty.call(before, sourceId)) addSource(sourceId, after, commands);
+		else if (!deepEqual(before[sourceId], after[sourceId])) {
+			if (before[sourceId].type === "geojson" && after[sourceId].type === "geojson" && canUpdateGeoJSON(before, after, sourceId)) addCommand(commands, {
+				command: "setGeoJSONSourceData",
+				args: [sourceId, after[sourceId].data]
+			});
+			else updateSource(sourceId, after, commands, sourcesRemoved);
+		}
+	}
+}
+/**
+* Adds a paint or layout property command for a single property of a layer.
+* The property names are taken from a layer's paint/layout object, so they are known to be
+* valid names for the given command, which a `for ... in` loop over that object can't express.
+* @param after - The paint or layout object to take the property value from
+* @param commands - The commands array to add to
+* @param layerId - The id of the layer the property belongs to
+* @param prop - The name of the property that changed
+* @param command - The command to add
+*/
+function addPropertyCommand(after, commands, layerId, prop, command) {
+	if (command === "setPaintProperty") addCommand(commands, {
+		command,
+		args: [
+			layerId,
+			prop,
+			after[prop]
+		]
+	});
+	else addCommand(commands, {
+		command,
+		args: [
+			layerId,
+			prop,
+			after[prop]
+		]
+	});
+}
+function diffLayerPropertyChanges(before, after, commands, layerId, command) {
+	before = before || {};
+	after = after || {};
+	for (const prop in before) {
+		if (!Object.prototype.hasOwnProperty.call(before, prop)) continue;
+		if (!deepEqual(before[prop], after[prop])) addPropertyCommand(after, commands, layerId, prop, command);
+	}
+	for (const prop in after) {
+		if (!Object.prototype.hasOwnProperty.call(after, prop) || Object.prototype.hasOwnProperty.call(before, prop)) continue;
+		if (!deepEqual(before[prop], after[prop])) addPropertyCommand(after, commands, layerId, prop, command);
+	}
+}
+function pluckId(layer) {
+	return layer.id;
+}
+function indexById(group, layer) {
+	group[layer.id] = layer;
+	return group;
+}
+function diffLayers(before, after, commands) {
+	before = before || [];
+	after = after || [];
+	const beforeOrder = before.map(pluckId);
+	const afterOrder = after.map(pluckId);
+	const beforeIndex = before.reduce(indexById, {});
+	const afterIndex = after.reduce(indexById, {});
+	const tracker = beforeOrder.slice();
+	const clean = Object.create(null);
+	let layerId;
+	let beforeLayer;
+	let afterLayer;
+	let insertBeforeLayerId;
+	let prop;
+	for (let i = 0, d = 0; i < beforeOrder.length; i++) {
+		layerId = beforeOrder[i];
+		if (!Object.prototype.hasOwnProperty.call(afterIndex, layerId)) {
+			addCommand(commands, {
+				command: "removeLayer",
+				args: [layerId]
+			});
+			tracker.splice(tracker.indexOf(layerId, d), 1);
+		} else d++;
+	}
+	for (let i = 0, d = 0; i < afterOrder.length; i++) {
+		layerId = afterOrder[afterOrder.length - 1 - i];
+		if (tracker[tracker.length - 1 - i] === layerId) continue;
+		if (Object.prototype.hasOwnProperty.call(beforeIndex, layerId)) {
+			addCommand(commands, {
+				command: "removeLayer",
+				args: [layerId]
+			});
+			tracker.splice(tracker.lastIndexOf(layerId, tracker.length - d), 1);
+		} else d++;
+		insertBeforeLayerId = tracker[tracker.length - i];
+		addCommand(commands, {
+			command: "addLayer",
+			args: [afterIndex[layerId], insertBeforeLayerId]
+		});
+		tracker.splice(tracker.length - i, 0, layerId);
+		clean[layerId] = true;
+	}
+	for (let i = 0; i < afterOrder.length; i++) {
+		layerId = afterOrder[i];
+		beforeLayer = beforeIndex[layerId];
+		afterLayer = afterIndex[layerId];
+		if (clean[layerId] || deepEqual(beforeLayer, afterLayer)) continue;
+		if (!deepEqual(beforeLayer.source, afterLayer.source) || !deepEqual(beforeLayer["source-layer"], afterLayer["source-layer"]) || !deepEqual(beforeLayer.type, afterLayer.type)) {
+			addCommand(commands, {
+				command: "removeLayer",
+				args: [layerId]
+			});
+			insertBeforeLayerId = tracker[tracker.lastIndexOf(layerId) + 1];
+			addCommand(commands, {
+				command: "addLayer",
+				args: [afterLayer, insertBeforeLayerId]
+			});
+			continue;
+		}
+		diffLayerPropertyChanges(beforeLayer.layout, afterLayer.layout, commands, layerId, "setLayoutProperty");
+		diffLayerPropertyChanges(beforeLayer.paint, afterLayer.paint, commands, layerId, "setPaintProperty");
+		if (!deepEqual(beforeLayer.filter, afterLayer.filter)) addCommand(commands, {
+			command: "setFilter",
+			args: [layerId, afterLayer.filter]
+		});
+		if (!deepEqual(beforeLayer.minzoom, afterLayer.minzoom) || !deepEqual(beforeLayer.maxzoom, afterLayer.maxzoom)) addCommand(commands, {
+			command: "setLayerZoomRange",
+			args: [
+				layerId,
+				afterLayer.minzoom,
+				afterLayer.maxzoom
+			]
+		});
+		for (prop in beforeLayer) {
+			if (!Object.prototype.hasOwnProperty.call(beforeLayer, prop)) continue;
+			if (prop === "layout" || prop === "paint" || prop === "filter" || prop === "metadata" || prop === "minzoom" || prop === "maxzoom") continue;
+			if (prop.indexOf("paint.") === 0) diffLayerPropertyChanges(beforeLayer[prop], afterLayer[prop], commands, layerId, "setPaintProperty");
+			else if (!deepEqual(beforeLayer[prop], afterLayer[prop])) addCommand(commands, {
+				command: "setLayerProperty",
+				args: [
+					layerId,
+					prop,
+					afterLayer[prop]
+				]
+			});
+		}
+		for (prop in afterLayer) {
+			if (!Object.prototype.hasOwnProperty.call(afterLayer, prop) || Object.prototype.hasOwnProperty.call(beforeLayer, prop)) continue;
+			if (prop === "layout" || prop === "paint" || prop === "filter" || prop === "metadata" || prop === "minzoom" || prop === "maxzoom") continue;
+			if (prop.indexOf("paint.") === 0) diffLayerPropertyChanges(beforeLayer[prop], afterLayer[prop], commands, layerId, "setPaintProperty");
+			else if (!deepEqual(beforeLayer[prop], afterLayer[prop])) addCommand(commands, {
+				command: "setLayerProperty",
+				args: [
+					layerId,
+					prop,
+					afterLayer[prop]
+				]
+			});
+		}
+	}
+}
+/**
+* Diff two stylesheet
+*
+* Creates semanticly aware diffs that can easily be applied at runtime.
+* Operations produced by the diff closely resemble the maplibre-gl-js API. Any
+* error creating the diff will fall back to the 'setStyle' operation.
+*
+* Example diff:
+* [
+*     { command: 'setConstant', args: ['@water', '#0000FF'] },
+*     { command: 'setPaintProperty', args: ['background', 'background-color', 'black'] }
+* ]
+*
+* @private
+* @param {*} [before] stylesheet to compare from
+* @param {*} after stylesheet to compare to
+* @returns Array list of changes
+*/
+function diff(before, after) {
+	if (!before) return [{
+		command: "setStyle",
+		args: [after]
+	}];
+	let commands = [];
+	try {
+		if (!deepEqual(before.version, after.version)) return [{
+			command: "setStyle",
+			args: [after]
+		}];
+		if (!deepEqual(before.center, after.center)) commands.push({
+			command: "setCenter",
+			args: [after.center]
+		});
+		if (!deepEqual(before.state, after.state)) commands.push({
+			command: "setGlobalState",
+			args: [after.state]
+		});
+		if (!deepEqual(before.centerAltitude, after.centerAltitude)) commands.push({
+			command: "setCenterAltitude",
+			args: [after.centerAltitude]
+		});
+		if (!deepEqual(before.zoom, after.zoom)) commands.push({
+			command: "setZoom",
+			args: [after.zoom]
+		});
+		if (!deepEqual(before.bearing, after.bearing)) commands.push({
+			command: "setBearing",
+			args: [after.bearing]
+		});
+		if (!deepEqual(before.pitch, after.pitch)) commands.push({
+			command: "setPitch",
+			args: [after.pitch]
+		});
+		if (!deepEqual(before.roll, after.roll)) commands.push({
+			command: "setRoll",
+			args: [after.roll]
+		});
+		if (!deepEqual(before.sprite, after.sprite)) commands.push({
+			command: "setSprite",
+			args: [after.sprite]
+		});
+		if (!deepEqual(before.glyphs, after.glyphs)) commands.push({
+			command: "setGlyphs",
+			args: [after.glyphs]
+		});
+		if (!deepEqual(before["font-faces"], after["font-faces"])) commands.push({
+			command: "setFontFaces",
+			args: [after["font-faces"]]
+		});
+		if (!deepEqual(before.transition, after.transition)) commands.push({
+			command: "setTransition",
+			args: [after.transition]
+		});
+		if (!deepEqual(before.light, after.light)) commands.push({
+			command: "setLight",
+			args: [after.light]
+		});
+		const terrainChanged = !deepEqual(before.terrain, after.terrain);
+		if (terrainChanged && !after.terrain) commands.push({
+			command: "setTerrain",
+			args: [void 0]
+		});
+		if (!deepEqual(before.sky, after.sky)) commands.push({
+			command: "setSky",
+			args: [after.sky]
+		});
+		if (!deepEqual(before.projection, after.projection)) commands.push({
+			command: "setProjection",
+			args: [after.projection]
+		});
+		const sourcesRemoved = {};
+		const removeOrAddSourceCommands = [];
+		diffSources(before.sources, after.sources, removeOrAddSourceCommands, sourcesRemoved);
+		const beforeLayers = [];
+		if (before.layers) before.layers.forEach((layer) => {
+			if ("source" in layer && sourcesRemoved[layer.source]) commands.push({
+				command: "removeLayer",
+				args: [layer.id]
+			});
+			else beforeLayers.push(layer);
+		});
+		commands = commands.concat(removeOrAddSourceCommands);
+		diffLayers(beforeLayers, after.layers, commands);
+		if (terrainChanged && after.terrain) commands.push({
+			command: "setTerrain",
+			args: [after.terrain]
+		});
+	} catch (e) {
+		console.warn("Unable to compute style diff:", e);
+		commands = [{
+			command: "setStyle",
+			args: [after]
+		}];
+	}
+	return commands;
+}
 //#endregion
 //#region node_modules/@maplibre/maplibre-gl-style-spec/dist/error/validation_error.mjs
 var ValidationError = class {
@@ -9383,6 +11657,23 @@ function groupByLayout(layers, cachedKeys) {
 	return result;
 }
 //#endregion
+//#region node_modules/@maplibre/maplibre-gl-style-spec/dist/empty.mjs
+function emptyStyle() {
+	const style = {};
+	const version = latest["$version"];
+	for (const styleKey in latest["$root"]) {
+		const specification = latest["$root"][styleKey];
+		if (specification.required) {
+			let value = null;
+			if (styleKey === "version") value = version;
+			else if (specification.type === "array") value = [];
+			else value = {};
+			if (value != null) style[styleKey] = value;
+		}
+	}
+	return style;
+}
+//#endregion
 //#region node_modules/@maplibre/maplibre-gl-style-spec/dist/validate/validate_constants.mjs
 function validateConstants(options) {
 	const key = options.key;
@@ -10610,236 +12901,204 @@ function createVisibility(visibility, rootKey, globalState) {
 	return new VisibilityExpressionClass(visibility, rootKey, globalState);
 }
 //#endregion
-//#region src/util/config.ts
-const config = {
-	MAX_PARALLEL_IMAGE_REQUESTS: 16,
-	MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME: 8,
-	MAX_TILE_CACHE_ZOOM_LEVELS: 5,
-	REGISTERED_PROTOCOLS: {},
-	WORKER_URL: ""
-};
-//#endregion
-//#region src/source/protocol_crud.ts
-function getProtocol(url) {
-	return config.REGISTERED_PROTOCOLS[url.substring(0, url.indexOf("://"))];
-}
+//#region src/style/validate_style.ts
+const validateStyle = validateStyleMin;
 /**
-* Adds a custom load resource function that will be called when using a URL that starts with a custom url schema.
-* This will happen in the main thread, and workers might call it if they don't know how to handle the protocol.
-* The example below will be triggered for custom:// urls defined in the sources list in the style definitions.
-* The function passed will receive the request parameters and should return with the resulting resource.
-* `requestParameters.type` says which kind of resource is expected. A tile is an `ArrayBuffer`, for example
-* a non-compressed pbf vector tile. An image is either its encoded bytes or an `ImageBitmap`/`HTMLImageElement`,
-* which is used without decoding. See {@link AddProtocolResponseData} for every accepted shape.
+* The source types the spec has a schema for, and therefore the only ones it can judge. Taken from
+* the spec itself so the two cannot drift apart.
+*/
+const SPEC_SOURCE_TYPES = new Set(Object.keys(latest).filter((key) => key.startsWith("source_")).map((key) => key.slice(7).replaceAll("_", "-")));
+/**
+* The sources whose type the spec has no schema for, so it rejects them outright even though we
+* render them: `canvas`, and anything registered with {@link addSourceType}. They are the renderer's
+* business rather than the spec's, so the spec's complaints about them are dropped -- otherwise
+* `map.setStyle(map.getStyle())` would fail on a source the user added correctly.
 *
-* @param customProtocol - the protocol to hook, for example 'custom'
-* @param loadFn - the function to use when trying to fetch a tile specified by the customProtocol
-* @example
-* ```ts
-* // This will fetch a file using the fetch API (this is obviously a non interesting example...)
-* addProtocol('custom', async (params, abortController) => {
-*      const t = await fetch(`https://${params.url.split("://")[1]}`);
-*      if (t.status == 200) {
-*          const buffer = await t.arrayBuffer();
-*          return {data: buffer}
-*      } else {
-*          throw new Error(`Tile fetch error: ${t.statusText}`);
-*      }
-*  });
-* // the following is an example of a way to return an error when trying to load a tile
-* addProtocol('custom2', async (params, abortController) => {
-*      throw new Error('someErrorMessage');
-* });
-* // An image handler that draws or computes its tiles can return them decoded, as an ImageBitmap.
-* addProtocol('drawn', async (params, abortController) => {
-*      const canvas = new OffscreenCanvas(256, 256);
-*      // ... draw the tile ...
-*      return {data: await createImageBitmap(canvas)};
-* });
-* ```
-* @see [Add a COG raster source](https://maplibre.org/maplibre-gl-js/docs/examples/add-a-cog-raster-source/)
-* @see [Add Contour Lines](https://maplibre.org/maplibre-gl-js/docs/examples/add-contour-lines/)
-* @see [PMTiles source and protocol](https://maplibre.org/maplibre-gl-js/docs/examples/pmtiles-source-and-protocol/)
-* @see [Use addProtocol to Transform Feature Properties](https://maplibre.org/maplibre-gl-js/docs/examples/use-addprotocol-to-transform-feature-properties/)
+* Each such source produces a single error keyed by `sources.<id>`, which is what is matched here.
+* @param style - the style about to be validated
+* @returns the `sources.<id>` key prefixes whose errors should be ignored
 */
-function addProtocol(customProtocol, loadFn) {
-	config.REGISTERED_PROTOCOLS[customProtocol] = loadFn;
+function unjudgeableSourceKeys(style) {
+	return Object.entries(style.sources ?? {}).filter(([, source]) => !SPEC_SOURCE_TYPES.has(source.type)).map(([id]) => `sources.${id}`);
 }
 /**
-* Removes a previously added protocol in the main thread.
+* Validates a whole style and emits what it finds, ignoring the sources the spec cannot judge.
 *
-* @param customProtocol - the custom protocol to remove registration for
-* @example
-* ```ts
-* removeProtocol('custom');
-* ```
+* @param emitter - the object to fire {@link ErrorEvent}s on
+* @param style - the style to validate
+* @returns whether validation failed, i.e. whether the caller should give up on the style
 */
-function removeProtocol(customProtocol) {
-	delete config.REGISTERED_PROTOCOLS[customProtocol];
-}
-//#endregion
-//#region src/util/ajax.ts
-/**
-* This is used to identify the global dispatcher id when sending a message from the worker without a target map id.
-*/
-const GLOBAL_DISPATCHER_ID = "global-dispatcher";
-/**
-* An error thrown when a HTTP request results in an error response.
-*/
-var AJAXError = class extends Error {
-	/**
-	* @param status - The response's HTTP status code.
-	* @param statusText - The response's HTTP status text.
-	* @param url - The request's URL.
-	* @param body - The response's body.
-	*/
-	constructor(status, statusText, url, body) {
-		super(`AJAXError: ${statusText} (${status}): ${url}`);
-		this.status = status;
-		this.statusText = statusText;
-		this.url = url;
-		this.body = body;
-	}
-};
-/**
-* Ensure that we're sending the correct referrer from blob URL worker bundles.
-* For files loaded from the local file system, `location.origin` will be set
-* to the string(!) "null" (Firefox), or "file://" (Chrome, Safari, Edge),
-* and we will set an empty referrer. Otherwise, we're using the document's URL.
-* If we're on a blob URL and parent window is cross-origin, parent.location throws
-* SecurityError DOMException, this means we are probably not in blob URL worker bundle.
-*/
-function getReferrer() {
-	if (isWorker(self)) return self.worker?.referrer;
-	if (window.location.protocol === "blob:") try {
-		return window.parent.location.href;
-	} catch {}
-	return window.location.href;
+function validateStyleAndEmit(emitter, style) {
+	const ignored = unjudgeableSourceKeys(style);
+	return emitValidationErrors(emitter, validateStyle(style).filter(({ message }) => !ignored.some((key) => message.startsWith(`${key}:`) || message.startsWith(`${key}.`))));
 }
 /**
-* Determines whether a URL is a file:// URL. This is obviously the case if it begins
-* with file://. Relative URLs are also file:// URLs iff the original document was loaded
-* via a file:// URL.
-* @param url - The URL to check
-* @returns `true` if the URL is a file:// URL, `false` otherwise
+* Emits everything a validator found, and reports whether any of it was severe enough to abort.
+*
+* Warnings are logged rather than emitted as errors: the style still renders, just not necessarily
+* as its author intended (e.g. a filter mixing deprecated syntax into an expression tree). Treating
+* them as errors would abort the whole style load and leave a blank map.
+* See https://github.com/maplibre/maplibre-style-spec/issues/1751
+*
+* @param emitter - the object to fire {@link ErrorEvent}s on
+* @param errors - what validation turned up, if anything
+* @returns whether validation failed, i.e. whether the caller should give up on the value
 */
-const isFileURL = (url) => url.startsWith("file:") || getReferrer()?.startsWith("file:") && !/^\w+:/.test(url);
-async function makeFetchRequest(requestParameters, abortController) {
-	const request = new Request(requestParameters.url, {
-		method: requestParameters.method || "GET",
-		body: requestParameters.body,
-		credentials: requestParameters.credentials,
-		headers: requestParameters.headers,
-		cache: requestParameters.cache,
-		referrer: getReferrer(),
-		referrerPolicy: requestParameters.referrerPolicy,
-		signal: abortController.signal
-	});
-	if (requestParameters.type === "json" && !request.headers.has("Accept")) request.headers.set("Accept", "application/json");
-	let response;
-	try {
-		response = await fetch(request);
-	} catch (e) {
-		if (isAbortError(e)) throw e;
-		throw new AJAXError(0, ensureError(e).message, requestParameters.url, new Blob());
-	}
-	if (!response.ok) {
-		const body = await response.blob();
-		throw new AJAXError(response.status, response.statusText, requestParameters.url, body);
-	}
-	let parsePromise;
-	if (requestParameters.type === "arrayBuffer" || requestParameters.type === "image") parsePromise = response.arrayBuffer();
-	else if (requestParameters.type === "json") parsePromise = response.json();
-	else parsePromise = response.text();
-	const result = await parsePromise;
-	throwIfAborted(abortController.signal);
-	return {
-		data: result,
-		cacheControl: response.headers.get("Cache-Control"),
-		expires: response.headers.get("Expires"),
-		etag: response.headers.get("ETag")
-	};
-}
-function makeXMLHttpRequest(requestParameters, abortController) {
-	return new Promise((resolve, reject) => {
-		const xhr = new XMLHttpRequest();
-		xhr.open(requestParameters.method || "GET", requestParameters.url, true);
-		if (requestParameters.type === "arrayBuffer" || requestParameters.type === "image") xhr.responseType = "arraybuffer";
-		for (const k in requestParameters.headers) xhr.setRequestHeader(k, requestParameters.headers[k]);
-		if (requestParameters.type === "json") {
-			xhr.responseType = "text";
-			if (!requestParameters.headers?.Accept) xhr.setRequestHeader("Accept", "application/json");
+function emitValidationErrors(emitter, errors) {
+	let hasErrors = false;
+	for (const error of errors) {
+		if (error.severity === "warning") {
+			warnOnce(error.message);
+			continue;
 		}
-		xhr.withCredentials = requestParameters.credentials === "include";
-		xhr.onerror = () => {
-			reject(new Error(xhr.statusText));
-		};
-		xhr.onload = () => {
-			if (abortController.signal.aborted) return;
-			if ((xhr.status >= 200 && xhr.status < 300 || xhr.status === 0) && xhr.response !== null) {
-				let data = xhr.response;
-				if (requestParameters.type === "json") try {
-					data = JSON.parse(xhr.response);
-				} catch (err) {
-					reject(err);
-					return;
-				}
-				resolve({
-					data,
-					cacheControl: xhr.getResponseHeader("Cache-Control"),
-					expires: xhr.getResponseHeader("Expires"),
-					etag: xhr.getResponseHeader("ETag")
-				});
-			} else {
-				const body = new Blob([xhr.response], { type: xhr.getResponseHeader("Content-Type") });
-				reject(new AJAXError(xhr.status, xhr.statusText, requestParameters.url, body));
+		emitter.fire(new ErrorEvent(new Error(error.message)));
+		hasErrors = true;
+	}
+	return hasErrors;
+}
+/**
+* Runs a validator over a value and emits whatever it finds.
+*
+* @param emitter - the object to fire {@link ErrorEvent}s on
+* @param validator - the validator to run, e.g. {@link validateFilter}
+* @param params - what to validate: the `value`, plus whatever context the validator needs, such as
+* the `key` locating it in the style, or the surrounding `style` that {@link validateStyle.layer} looks at
+* @param options - setter options; validation is skipped entirely when `validate` is `false`
+* @returns whether validation failed, i.e. whether the caller should give up on the value
+*/
+function validateAndEmit(emitter, validator, params, options) {
+	if (options?.validate === false) return false;
+	return emitValidationErrors(emitter, validator({
+		styleSpec: latest,
+		...params
+	}));
+}
+//#endregion
+//#region src/util/transferable_grid_index.ts
+const NUM_PARAMS = 3;
+var TransferableGridIndex = class TransferableGridIndex {
+	constructor(extent, n, padding) {
+		const cells = this.cells = [];
+		if (extent instanceof ArrayBuffer) {
+			this.arrayBuffer = extent;
+			const array = new Int32Array(this.arrayBuffer);
+			extent = array[0];
+			n = array[1];
+			padding = array[2];
+			this.d = n + 2 * padding;
+			for (let k = 0; k < this.d * this.d; k++) {
+				const start = array[NUM_PARAMS + k];
+				const end = array[NUM_PARAMS + k + 1];
+				cells.push(start === end ? null : array.subarray(start, end));
 			}
-		};
-		abortController.signal.addEventListener("abort", () => {
-			xhr.abort();
-			reject(new AbortError(abortController.signal.reason));
-		});
-		xhr.send(requestParameters.body);
-	});
-}
-/**
-* We're trying to use the Fetch API if possible. However, requests for resources with the file:// URI scheme don't work with the Fetch API.
-* In this case we unconditionally use XHR on the current thread since referrers don't matter.
-* This method can also use the registered method if `addProtocol` was called.
-* @param requestParameters - The request parameters
-* @param abortController - The abort controller allowing to cancel the request
-* @returns a promise resolving to the response, including cache control and expiry data
-*/
-const makeRequest = async function(requestParameters, abortController) {
-	if (requestParameters.url.includes("://") && !/^https?:|^file:/.test(requestParameters.url)) {
-		const protocolLoadFn = getProtocol(requestParameters.url);
-		if (protocolLoadFn) {
-			const response = await protocolLoadFn(requestParameters, abortController);
-			if (!response.data && requestParameters.type === "arrayBuffer") return extend(response, { data: /* @__PURE__ */ new ArrayBuffer(0) });
-			return response;
+			const keysOffset = array[NUM_PARAMS + cells.length];
+			const bboxesOffset = array[NUM_PARAMS + cells.length + 1];
+			this.keys = array.subarray(keysOffset, bboxesOffset);
+			this.bboxes = array.subarray(bboxesOffset);
+			this.insert = this._insertReadonly;
+		} else {
+			this.d = n + 2 * padding;
+			for (let i = 0; i < this.d * this.d; i++) cells.push([]);
+			this.keys = [];
+			this.bboxes = [];
 		}
-		if (isWorker(self) && self.worker?.actor) return self.worker.actor.sendAsync({
-			type: "GR",
-			data: requestParameters,
-			targetMapId: GLOBAL_DISPATCHER_ID
-		}, abortController);
+		this.n = n;
+		this.extent = extent;
+		this.padding = padding;
+		this.scale = n / extent;
+		this.uid = 0;
+		const p = padding / n * extent;
+		this.min = -p;
+		this.max = extent + p;
 	}
-	if (!isFileURL(requestParameters.url)) {
-		if (fetch && Request && AbortController && Object.hasOwn(Request.prototype, "signal")) return makeFetchRequest(requestParameters, abortController);
-		if (isWorker(self) && self.worker?.actor) return self.worker.actor.sendAsync({
-			type: "GR",
-			data: requestParameters,
-			mustQueue: true,
-			targetMapId: GLOBAL_DISPATCHER_ID
-		}, abortController);
+	insert(key, x1, y1, x2, y2) {
+		this._forEachCell(x1, y1, x2, y2, this._insertCell, this.uid++, void 0, void 0);
+		this.keys.push(key);
+		this.bboxes.push(x1);
+		this.bboxes.push(y1);
+		this.bboxes.push(x2);
+		this.bboxes.push(y2);
 	}
-	return makeXMLHttpRequest(requestParameters, abortController);
-};
-const getJSON = (requestParameters, abortController) => {
-	return makeRequest(extend(requestParameters, { type: "json" }), abortController);
-};
-const getArrayBuffer = (requestParameters, abortController) => {
-	return makeRequest(extend(requestParameters, { type: "arrayBuffer" }), abortController);
+	_insertReadonly() {
+		throw new Error("Cannot insert into a GridIndex created from an ArrayBuffer.");
+	}
+	_insertCell(x1, y1, x2, y2, cellIndex, uid) {
+		this.cells[cellIndex].push(uid);
+	}
+	query(x1, y1, x2, y2, intersectionTest) {
+		const min = this.min;
+		const max = this.max;
+		if (x1 <= min && y1 <= min && max <= x2 && max <= y2 && !intersectionTest) return [...this.keys];
+		else {
+			const result = [];
+			this._forEachCell(x1, y1, x2, y2, this._queryCell, result, {}, intersectionTest);
+			return result;
+		}
+	}
+	_queryCell(x1, y1, x2, y2, cellIndex, result, seenUids, intersectionTest) {
+		const cell = this.cells[cellIndex];
+		if (cell !== null) {
+			const keys = this.keys;
+			const bboxes = this.bboxes;
+			for (const uid of cell) if (seenUids[uid] === void 0) {
+				const offset = uid * 4;
+				if (intersectionTest ? intersectionTest(bboxes[offset + 0], bboxes[offset + 1], bboxes[offset + 2], bboxes[offset + 3]) : x1 <= bboxes[offset + 2] && y1 <= bboxes[offset + 3] && x2 >= bboxes[offset + 0] && y2 >= bboxes[offset + 1]) {
+					seenUids[uid] = true;
+					result.push(keys[uid]);
+				} else seenUids[uid] = false;
+			}
+		}
+	}
+	_forEachCell(x1, y1, x2, y2, fn, arg1, arg2, intersectionTest) {
+		const cx1 = this._convertToCellCoord(x1);
+		const cy1 = this._convertToCellCoord(y1);
+		const cx2 = this._convertToCellCoord(x2);
+		const cy2 = this._convertToCellCoord(y2);
+		for (let x = cx1; x <= cx2; x++) for (let y = cy1; y <= cy2; y++) {
+			const cellIndex = this.d * y + x;
+			if (intersectionTest && !intersectionTest(this._convertFromCellCoord(x), this._convertFromCellCoord(y), this._convertFromCellCoord(x + 1), this._convertFromCellCoord(y + 1))) continue;
+			if (fn.call(this, x1, y1, x2, y2, cellIndex, arg1, arg2, intersectionTest)) return;
+		}
+	}
+	_convertFromCellCoord(x) {
+		return (x - this.padding) / this.scale;
+	}
+	_convertToCellCoord(x) {
+		return Math.max(0, Math.min(this.d - 1, Math.floor(x * this.scale) + this.padding));
+	}
+	toArrayBuffer() {
+		if (this.arrayBuffer) return this.arrayBuffer;
+		const cells = this.cells;
+		const metadataLength = NUM_PARAMS + this.cells.length + 1 + 1;
+		let totalCellLength = 0;
+		for (const cell of this.cells) totalCellLength += cell.length;
+		const array = new Int32Array(metadataLength + totalCellLength + this.keys.length + this.bboxes.length);
+		array[0] = this.extent;
+		array[1] = this.n;
+		array[2] = this.padding;
+		let offset = metadataLength;
+		for (let k = 0; k < cells.length; k++) {
+			const cell = cells[k];
+			array[NUM_PARAMS + k] = offset;
+			array.set(cell, offset);
+			offset += cell.length;
+		}
+		array[NUM_PARAMS + cells.length] = offset;
+		array.set(this.keys, offset);
+		offset += this.keys.length;
+		array[NUM_PARAMS + cells.length + 1] = offset;
+		array.set(this.bboxes, offset);
+		offset += this.bboxes.length;
+		return array.buffer;
+	}
+	static serialize(grid, transferables) {
+		const buffer = grid.toArrayBuffer();
+		if (transferables) transferables.push(buffer);
+		return { buffer };
+	}
+	static deserialize(serialized) {
+		return new TransferableGridIndex(serialized.buffer);
+	}
 };
 //#endregion
 //#region src/util/web_worker_transfer.ts
@@ -10958,338 +13217,6 @@ function deserialize(input) {
 		result[key] = registry[classRegistryKey].shallow.includes(key) ? value : deserialize(value);
 	}
 	return result;
-}
-//#endregion
-//#region src/util/throttled_invoker.ts
-/**
-* Invokes the wrapped function in a non-blocking way when trigger() is called.
-* Invocation requests are ignored until the function was actually invoked.
-*/
-var ThrottledInvoker = class {
-	constructor(methodToThrottle) {
-		this._methodToThrottle = methodToThrottle;
-		this._triggered = false;
-		this._channel = new MessageChannel();
-		this._channel.port2.onmessage = () => {
-			this._triggered = false;
-			this._methodToThrottle();
-		};
-	}
-	trigger() {
-		if (this._triggered) return;
-		this._triggered = true;
-		this._channel?.port1.postMessage(true);
-	}
-	remove() {
-		delete this._channel;
-		this._methodToThrottle = () => {};
-	}
-};
-//#endregion
-//#region src/util/actor.ts
-const addEventDefaultOptions = { once: true };
-/**
-* An implementation of the [Actor design pattern](https://en.wikipedia.org/wiki/Actor_model)
-* that maintains the relationship between asynchronous tasks and the objects
-* that spin them off - in this case, tasks like parsing parts of styles,
-* owned by the styles
-*/
-var Actor = class {
-	/**
-	* @param target - The target
-	* @param mapId - A unique identifier for the Map instance using this Actor.
-	*/
-	constructor(target, mapId) {
-		this.target = target;
-		this.mapId = mapId;
-		this.resolveRejects = {};
-		this.tasks = {};
-		this.taskQueue = [];
-		this.abortControllers = {};
-		this.messageHandlers = {};
-		this.invoker = new ThrottledInvoker(() => this.process());
-		this.subscription = subscribe(this.target, "message", (message) => this.receive(message), false);
-		this.globalScope = isWorker(self) ? target : window;
-	}
-	registerMessageHandler(type, handler) {
-		this.messageHandlers[type] = handler;
-	}
-	unregisterMessageHandler(type) {
-		delete this.messageHandlers[type];
-	}
-	/**
-	* Sends a message from a main-thread map to a Worker or from a Worker back to
-	* a main-thread map instance.
-	* @param message - the message to send
-	* @param abortController - an optional AbortController to abort the request
-	* @returns a promise that will be resolved with the response data
-	*/
-	sendAsync(message, abortController) {
-		return new Promise((resolve, reject) => {
-			const id = Math.round(Math.random() * 0xde0b6b3a7640000).toString(36).substring(0, 10);
-			const subscription = abortController ? subscribe(abortController.signal, "abort", () => {
-				subscription?.unsubscribe();
-				delete this.resolveRejects[id];
-				const cancelMessage = {
-					id,
-					type: "<cancel>",
-					origin: location.origin,
-					targetMapId: message.targetMapId,
-					sourceMapId: this.mapId
-				};
-				this.target.postMessage(cancelMessage);
-				reject(new AbortError(abortController.signal.reason));
-			}, addEventDefaultOptions) : null;
-			this.resolveRejects[id] = {
-				resolve: (value) => {
-					subscription?.unsubscribe();
-					resolve(value);
-				},
-				reject: (reason) => {
-					subscription?.unsubscribe();
-					reject(reason);
-				}
-			};
-			const buffers = [];
-			const messageToPost = {
-				...message,
-				id,
-				sourceMapId: this.mapId,
-				origin: location.origin,
-				data: serialize(message.data, buffers)
-			};
-			this.target.postMessage(messageToPost, { transfer: buffers });
-		});
-	}
-	receive(message) {
-		const data = message.data;
-		const id = data.id;
-		const SPECIAL_ORIGINS = [
-			"file://",
-			"resource://android",
-			"null"
-		];
-		const origins = [data.origin, location.origin];
-		const isSameOrigin = data.origin === location.origin;
-		const hasSpecialOrigin = origins.some((origin) => SPECIAL_ORIGINS.includes(origin));
-		if (!isSameOrigin && !hasSpecialOrigin) return;
-		if (data.targetMapId && this.mapId !== data.targetMapId) return;
-		if (data.type === "<cancel>") {
-			delete this.tasks[id];
-			const abortController = this.abortControllers[id];
-			delete this.abortControllers[id];
-			if (abortController) abortController.abort();
-			return;
-		}
-		if (isWorker(self) || data.mustQueue) {
-			this.tasks[id] = data;
-			this.taskQueue.push(id);
-			this.invoker.trigger();
-			return;
-		}
-		this.processTask(id, data);
-	}
-	process() {
-		if (this.taskQueue.length === 0) return;
-		const id = this.taskQueue.shift();
-		const task = this.tasks[id];
-		delete this.tasks[id];
-		if (this.taskQueue.length > 0) this.invoker.trigger();
-		if (!task) return;
-		this.processTask(id, task);
-	}
-	async processTask(id, task) {
-		if (task.type === "<response>") {
-			const resolveReject = this.resolveRejects[id];
-			delete this.resolveRejects[id];
-			if (!resolveReject) return;
-			if (task.error) resolveReject.reject(ensureError(deserialize(task.error)));
-			else resolveReject.resolve(deserialize(task.data));
-			return;
-		}
-		if (!this.messageHandlers[task.type]) {
-			this.completeTask(id, null, null);
-			return;
-		}
-		const params = deserialize(task.data);
-		const abortController = new AbortController();
-		this.abortControllers[id] = abortController;
-		try {
-			const data = await this.messageHandlers[task.type](task.sourceMapId, params, abortController);
-			this.completeTask(id, null, data);
-		} catch (err) {
-			this.completeTask(id, ensureError(err));
-		}
-	}
-	completeTask(id, err, data) {
-		const buffers = [];
-		delete this.abortControllers[id];
-		const responseMessage = {
-			id,
-			type: "<response>",
-			sourceMapId: this.mapId,
-			origin: location.origin,
-			error: err ? serialize(err) : null,
-			data: serialize(data, buffers)
-		};
-		this.target.postMessage(responseMessage, { transfer: buffers });
-	}
-	remove() {
-		this.invoker.remove();
-		this.subscription.unsubscribe();
-	}
-};
-//#endregion
-//#region src/util/evented.ts
-function _addEventListener(type, listener, listenerList) {
-	if (!listenerList[type]?.includes(listener)) {
-		listenerList[type] ||= [];
-		listenerList[type].push(listener);
-	}
-}
-function _removeEventListener(type, listener, listenerList) {
-	if (listenerList?.[type]) {
-		const index = listenerList[type].indexOf(listener);
-		if (index !== -1) listenerList[type].splice(index, 1);
-	}
-}
-/**
-* The event class
-*/
-var Event = class {
-	constructor(type, data = {}) {
-		extend(this, data);
-		this.type = type;
-	}
-};
-/**
-* An error event
-*/
-var ErrorEvent = class extends Event {
-	constructor(error, data = {}) {
-		super("error", extend({ error }, data));
-	}
-};
-/**
-* Methods mixed in to other classes for event capabilities.
-*
-* @group Event Related
-*/
-var Evented = class {
-	/**
-	* Adds a listener to a specified event type.
-	*
-	* @param type - The event type to add a listen for.
-	* @param listener - The function to be called when the event is fired.
-	* The listener function is called with the data object passed to `fire`,
-	* extended with `target` and `type` properties.
-	*/
-	on(type, listener) {
-		this._listeners ||= {};
-		_addEventListener(type, listener, this._listeners);
-		return { unsubscribe: () => {
-			this.off(type, listener);
-		} };
-	}
-	/**
-	* Removes a previously registered event listener.
-	*
-	* @param type - The event type to remove listeners for.
-	* @param listener - The listener function to remove.
-	*/
-	off(type, listener) {
-		_removeEventListener(type, listener, this._listeners);
-		_removeEventListener(type, listener, this._oneTimeListeners);
-		return this;
-	}
-	once(type, listener) {
-		if (!listener) return new Promise((resolve) => this.once(type, resolve));
-		this._oneTimeListeners ||= {};
-		_addEventListener(type, listener, this._oneTimeListeners);
-		return this;
-	}
-	fire(event, properties) {
-		const firedEvent = typeof event === "string" ? new Event(event, properties || {}) : event;
-		const type = firedEvent.type;
-		if (this.listens(type)) {
-			firedEvent.target = this;
-			const listeners = this._listeners?.[type]?.slice() ?? [];
-			for (const listener of listeners) listener.call(this, firedEvent);
-			const oneTimeListeners = this._oneTimeListeners?.[type]?.slice() ?? [];
-			for (const listener of oneTimeListeners) {
-				_removeEventListener(type, listener, this._oneTimeListeners);
-				listener.call(this, firedEvent);
-			}
-			const parent = this._eventedParent;
-			if (parent) {
-				extend(firedEvent, typeof this._eventedParentData === "function" ? this._eventedParentData() : this._eventedParentData);
-				parent.fire(firedEvent);
-			}
-		} else if (firedEvent instanceof ErrorEvent) console.error(firedEvent.error);
-		return this;
-	}
-	/**
-	* Returns a true if this instance of Evented or any forwardeed instances of Evented have a listener for the specified type.
-	*
-	* @param type - The event type
-	* @returns `true` if there is at least one registered listener for specified event type, `false` otherwise
-	*/
-	listens(type) {
-		return Boolean(this._listeners?.[type]?.length || this._oneTimeListeners?.[type]?.length || this._eventedParent?.listens(type));
-	}
-	/**
-	* Bubble all events fired by this instance of Evented to this parent instance of Evented.
-	*/
-	setEventedParent(parent, data) {
-		this._eventedParent = parent;
-		this._eventedParentData = data;
-		return this;
-	}
-};
-//#endregion
-//#region src/style/validate_style.ts
-const validateStyle = validateStyleMin;
-new Set(Object.keys(latest).filter((key) => key.startsWith("source_")).map((key) => key.slice(7).replaceAll("_", "-")));
-/**
-* Emits everything a validator found, and reports whether any of it was severe enough to abort.
-*
-* Warnings are logged rather than emitted as errors: the style still renders, just not necessarily
-* as its author intended (e.g. a filter mixing deprecated syntax into an expression tree). Treating
-* them as errors would abort the whole style load and leave a blank map.
-* See https://github.com/maplibre/maplibre-style-spec/issues/1751
-*
-* @param emitter - the object to fire {@link ErrorEvent}s on
-* @param errors - what validation turned up, if anything
-* @returns whether validation failed, i.e. whether the caller should give up on the value
-*/
-function emitValidationErrors(emitter, errors) {
-	let hasErrors = false;
-	for (const error of errors) {
-		if (error.severity === "warning") {
-			warnOnce(error.message);
-			continue;
-		}
-		emitter.fire(new ErrorEvent(new Error(error.message)));
-		hasErrors = true;
-	}
-	return hasErrors;
-}
-/**
-* Runs a validator over a value and emits whatever it finds.
-*
-* @param emitter - the object to fire {@link ErrorEvent}s on
-* @param validator - the validator to run, e.g. {@link validateFilter}
-* @param params - what to validate: the `value`, plus whatever context the validator needs, such as
-* the `key` locating it in the style, or the surrounding `style` that {@link validateStyle.layer} looks at
-* @param options - setter options; validation is skipped entirely when `validate` is `false`
-* @returns whether validation failed, i.e. whether the caller should give up on the value
-*/
-function validateAndEmit(emitter, validator, params, options) {
-	if (options?.validate === false) return false;
-	return emitValidationErrors(emitter, validator({
-		styleSpec: latest,
-		...params
-	}));
 }
 //#endregion
 //#region src/style/zoom_history.ts
@@ -12079,6 +14006,31 @@ var StyleLayer = class extends Evented {
 	}
 };
 //#endregion
+//#region src/style/style_layer/raster_style_layer_properties.g.ts
+let paint$9;
+const getPaint$9 = () => paint$9 = paint$9 || new Properties({
+	"raster-opacity": new DataConstantProperty(latest["paint_raster"]["raster-opacity"], "raster-opacity"),
+	"raster-hue-rotate": new DataConstantProperty(latest["paint_raster"]["raster-hue-rotate"], "raster-hue-rotate"),
+	"raster-brightness-min": new DataConstantProperty(latest["paint_raster"]["raster-brightness-min"], "raster-brightness-min"),
+	"raster-brightness-max": new DataConstantProperty(latest["paint_raster"]["raster-brightness-max"], "raster-brightness-max"),
+	"raster-saturation": new DataConstantProperty(latest["paint_raster"]["raster-saturation"], "raster-saturation"),
+	"raster-contrast": new DataConstantProperty(latest["paint_raster"]["raster-contrast"], "raster-contrast"),
+	"resampling": new DataConstantProperty(latest["paint_raster"]["resampling"], "resampling"),
+	"raster-resampling": new DataConstantProperty(latest["paint_raster"]["raster-resampling"], "raster-resampling"),
+	"raster-fade-duration": new DataConstantProperty(latest["paint_raster"]["raster-fade-duration"], "raster-fade-duration")
+});
+var raster_style_layer_properties_g_default = { get paint() {
+	return getPaint$9();
+} };
+//#endregion
+//#region src/style/style_layer/raster_style_layer.ts
+const isRasterStyleLayer = (layer) => layer.type === "raster";
+var RasterStyleLayer = class extends StyleLayer {
+	constructor(layer, globalState) {
+		super(layer, raster_style_layer_properties_g_default, globalState);
+	}
+};
+//#endregion
 //#region src/util/struct_array.ts
 /**
 * @internal
@@ -12361,36 +14313,32 @@ register("StructArrayLayout2i4i12", StructArrayLayout2i4i12);
 * Implementation of the StructArray layout:
 * [0] - Int16[2]
 * [4] - Uint8[4]
-* [8] - Int8[2]
 *
 */
-var StructArrayLayout2i4ub2b10 = class extends StructArray {
+var StructArrayLayout2i4ub8 = class extends StructArray {
 	_refreshViews() {
 		this.uint8 = new Uint8Array(this.arrayBuffer);
 		this.int16 = new Int16Array(this.arrayBuffer);
-		this.int8 = new Int8Array(this.arrayBuffer);
 	}
-	emplaceBack(v0, v1, v2, v3, v4, v5, v6, v7) {
+	emplaceBack(v0, v1, v2, v3, v4, v5) {
 		const i = this.length;
 		this.resize(i + 1);
-		return this.emplace(i, v0, v1, v2, v3, v4, v5, v6, v7);
+		return this.emplace(i, v0, v1, v2, v3, v4, v5);
 	}
-	emplace(i, v0, v1, v2, v3, v4, v5, v6, v7) {
-		const o2 = i * 5;
-		const o1 = i * 10;
+	emplace(i, v0, v1, v2, v3, v4, v5) {
+		const o2 = i * 4;
+		const o1 = i * 8;
 		this.int16[o2 + 0] = v0;
 		this.int16[o2 + 1] = v1;
 		this.uint8[o1 + 4] = v2;
 		this.uint8[o1 + 5] = v3;
 		this.uint8[o1 + 6] = v4;
 		this.uint8[o1 + 7] = v5;
-		this.int8[o1 + 8] = v6;
-		this.int8[o1 + 9] = v7;
 		return i;
 	}
 };
-StructArrayLayout2i4ub2b10.prototype.bytesPerElement = 10;
-register("StructArrayLayout2i4ub2b10", StructArrayLayout2i4ub2b10);
+StructArrayLayout2i4ub8.prototype.bytesPerElement = 8;
+register("StructArrayLayout2i4ub8", StructArrayLayout2i4ub8);
 /**
 * @internal
 * Implementation of the StructArray layout:
@@ -13302,10 +15250,12 @@ var FeatureIndexArray = class extends StructArrayLayout1ul2ui8 {
 };
 register("FeatureIndexArray", FeatureIndexArray);
 var PosArray = class extends StructArrayLayout2i4 {};
+var Pos3dArray = class extends StructArrayLayout3i6 {};
+var RasterBoundsArray = class extends StructArrayLayout4i8 {};
 var CircleLayoutArray = class extends StructArrayLayout2i4 {};
 var FillLayoutArray = class extends StructArrayLayout2i4 {};
 var FillExtrusionLayoutArray = class extends StructArrayLayout2i4i12 {};
-var LineLayoutArray = class extends StructArrayLayout2i4ub2b10 {};
+var LineLayoutArray = class extends StructArrayLayout2i4ub8 {};
 var LineExtLayoutArray = class extends StructArrayLayout2f8 {};
 var PatternLayoutArray = class extends StructArrayLayout10ui20 {};
 var DashLayoutArray = class extends StructArrayLayout8ui16 {};
@@ -13313,9 +15263,12 @@ var SymbolLayoutArray = class extends StructArrayLayout4i4ui4i1f28 {};
 var SymbolDynamicLayoutArray = class extends StructArrayLayout3f12 {};
 var SymbolOpacityArray = class extends StructArrayLayout1ul4 {};
 var CollisionBoxLayoutArray = class extends StructArrayLayout2i2i2i12 {};
+var CollisionCircleLayoutArray = class extends StructArrayLayout2f1f2i16 {};
 var CollisionVertexArray = class extends StructArrayLayout2ub2f2i16 {};
+var QuadTriangleArray = class extends StructArrayLayout3ui6 {};
 var TriangleIndexArray = class extends StructArrayLayout3ui6 {};
 var LineIndexArray = class extends StructArrayLayout2ui4 {};
+var LineStripIndexArray = class extends StructArrayLayout1ui2 {};
 //#endregion
 //#region src/data/bucket/circle_attributes.ts
 const layout$7 = createLayout([{
@@ -13646,6 +15599,18 @@ var Uniform = class {
 		this.location = location;
 	}
 };
+var Uniform1i = class extends Uniform {
+	constructor(context, location) {
+		super(context, location);
+		this.current = 0;
+	}
+	set(v) {
+		if (this.current !== v) {
+			this.current = v;
+			this.gl.uniform1i(this.location, v);
+		}
+	}
+};
 var Uniform1f = class extends Uniform {
 	constructor(context, location) {
 		super(context, location);
@@ -13655,6 +15620,34 @@ var Uniform1f = class extends Uniform {
 		if (this.current !== v) {
 			this.current = v;
 			this.gl.uniform1f(this.location, v);
+		}
+	}
+};
+var Uniform2f = class extends Uniform {
+	constructor(context, location) {
+		super(context, location);
+		this.current = [0, 0];
+	}
+	set(v) {
+		if (v[0] !== this.current[0] || v[1] !== this.current[1]) {
+			this.current = v;
+			this.gl.uniform2f(this.location, v[0], v[1]);
+		}
+	}
+};
+var Uniform3f = class extends Uniform {
+	constructor(context, location) {
+		super(context, location);
+		this.current = [
+			0,
+			0,
+			0
+		];
+	}
+	set(v) {
+		if (v[0] !== this.current[0] || v[1] !== this.current[1] || v[2] !== this.current[2]) {
+			this.current = v;
+			this.gl.uniform3f(this.location, v[0], v[1], v[2]);
 		}
 	}
 };
@@ -13684,6 +15677,57 @@ var UniformColor = class extends Uniform {
 		if (v.r !== this.current.r || v.g !== this.current.g || v.b !== this.current.b || v.a !== this.current.a) {
 			this.current = v;
 			this.gl.uniform4f(this.location, v.r, v.g, v.b, v.a);
+		}
+	}
+};
+var UniformColorArray = class extends Uniform {
+	constructor(context, location) {
+		super(context, location);
+		this.current = new Array();
+	}
+	set(v) {
+		if (v != this.current) {
+			this.current = v;
+			const values = new Float32Array(v.length * 4);
+			for (let i = 0; i < v.length; i++) {
+				values[4 * i] = v[i].r;
+				values[4 * i + 1] = v[i].g;
+				values[4 * i + 2] = v[i].b;
+				values[4 * i + 3] = v[i].a;
+			}
+			this.gl.uniform4fv(this.location, values);
+		}
+	}
+};
+var UniformFloatArray = class extends Uniform {
+	constructor(context, location) {
+		super(context, location);
+		this.current = new Array();
+	}
+	set(v) {
+		if (v != this.current) {
+			this.current = v;
+			const values = new Float32Array(v);
+			this.gl.uniform1fv(this.location, values);
+		}
+	}
+};
+const emptyMat4 = /* @__PURE__ */ new Float32Array(16);
+var UniformMatrix4f = class extends Uniform {
+	constructor(context, location) {
+		super(context, location);
+		this.current = emptyMat4;
+	}
+	set(v) {
+		if (v[12] !== this.current[12] || v[0] !== this.current[0]) {
+			this.current = v;
+			this.gl.uniformMatrix4fv(this.location, false, v);
+			return;
+		}
+		for (let i = 1; i < 16; i++) if (v[i] !== this.current[i]) {
+			this.current = v;
+			this.gl.uniformMatrix4fv(this.location, false, v);
+			break;
 		}
 	}
 };
@@ -14586,8 +16630,8 @@ function projectQueryGeometry$1(queryGeometry, transform, unwrappedTileID, getEl
 //#region src/style/style_layer/circle_style_layer_properties.g.ts
 let layout$6;
 const getLayout$4 = () => layout$6 = layout$6 || new Properties({ "circle-sort-key": new DataDrivenProperty(latest["layout_circle"]["circle-sort-key"], "circle-sort-key") });
-let paint$9;
-const getPaint$9 = () => paint$9 = paint$9 || new Properties({
+let paint$8;
+const getPaint$8 = () => paint$8 = paint$8 || new Properties({
 	"circle-radius": new DataDrivenProperty(latest["paint_circle"]["circle-radius"], "circle-radius"),
 	"circle-color": new DataDrivenProperty(latest["paint_circle"]["circle-color"], "circle-color"),
 	"circle-blur": new DataDrivenProperty(latest["paint_circle"]["circle-blur"], "circle-blur"),
@@ -14602,12 +16646,15 @@ const getPaint$9 = () => paint$9 = paint$9 || new Properties({
 });
 var circle_style_layer_properties_g_default = {
 	get paint() {
-		return getPaint$9();
+		return getPaint$8();
 	},
 	get layout() {
 		return getLayout$4();
 	}
 };
+//#endregion
+//#region src/style/style_layer/circle_style_layer.ts
+const isCircleStyleLayer = (layer) => layer.type === "circle";
 /**
 * A style layer that defines a circle
 */
@@ -14653,8 +16700,8 @@ var HeatmapBucket = class extends CircleBucket {};
 register("HeatmapBucket", HeatmapBucket, { omit: ["layers"] });
 //#endregion
 //#region src/style/style_layer/heatmap_style_layer_properties.g.ts
-let paint$8;
-const getPaint$8 = () => paint$8 = paint$8 || new Properties({
+let paint$7;
+const getPaint$7 = () => paint$7 = paint$7 || new Properties({
 	"heatmap-radius": new DataDrivenProperty(latest["paint_heatmap"]["heatmap-radius"], "heatmap-radius"),
 	"heatmap-weight": new DataDrivenProperty(latest["paint_heatmap"]["heatmap-weight"], "heatmap-weight"),
 	"heatmap-intensity": new DataConstantProperty(latest["paint_heatmap"]["heatmap-intensity"], "heatmap-intensity"),
@@ -14662,7 +16709,7 @@ const getPaint$8 = () => paint$8 = paint$8 || new Properties({
 	"heatmap-opacity": new DataConstantProperty(latest["paint_heatmap"]["heatmap-opacity"], "heatmap-opacity")
 });
 var heatmap_style_layer_properties_g_default = { get paint() {
-	return getPaint$8();
+	return getPaint$7();
 } };
 //#endregion
 //#region src/util/image.ts
@@ -14811,6 +16858,7 @@ function renderColorRamp(params) {
 //#endregion
 //#region src/style/style_layer/heatmap_style_layer.ts
 const HEATMAP_FULL_RENDER_FBO_KEY = "big-fb";
+const isHeatmapStyleLayer = (layer) => layer.type === "heatmap";
 /**
 * A style layer that defines a heatmap
 */
@@ -14856,8 +16904,8 @@ var HeatmapStyleLayer = class extends StyleLayer {
 };
 //#endregion
 //#region src/style/style_layer/hillshade_style_layer_properties.g.ts
-let paint$7;
-const getPaint$7 = () => paint$7 = paint$7 || new Properties({
+let paint$6;
+const getPaint$6 = () => paint$6 = paint$6 || new Properties({
 	"hillshade-illumination-direction": new DataConstantProperty(latest["paint_hillshade"]["hillshade-illumination-direction"], "hillshade-illumination-direction"),
 	"hillshade-illumination-altitude": new DataConstantProperty(latest["paint_hillshade"]["hillshade-illumination-altitude"], "hillshade-illumination-altitude"),
 	"hillshade-illumination-anchor": new DataConstantProperty(latest["paint_hillshade"]["hillshade-illumination-anchor"], "hillshade-illumination-anchor"),
@@ -14869,8 +16917,11 @@ const getPaint$7 = () => paint$7 = paint$7 || new Properties({
 	"resampling": new DataConstantProperty(latest["paint_hillshade"]["resampling"], "resampling")
 });
 var hillshade_style_layer_properties_g_default = { get paint() {
-	return getPaint$7();
+	return getPaint$6();
 } };
+//#endregion
+//#region src/style/style_layer/hillshade_style_layer.ts
+const isHillshadeStyleLayer = (layer) => layer.type === "hillshade";
 var HillshadeStyleLayer = class extends StyleLayer {
 	constructor(layer, globalState) {
 		super(layer, hillshade_style_layer_properties_g_default, globalState);
@@ -14903,14 +16954,14 @@ var HillshadeStyleLayer = class extends StyleLayer {
 };
 //#endregion
 //#region src/style/style_layer/color_relief_style_layer_properties.g.ts
-let paint$6;
-const getPaint$6 = () => paint$6 = paint$6 || new Properties({
+let paint$5;
+const getPaint$5 = () => paint$5 = paint$5 || new Properties({
 	"color-relief-opacity": new DataConstantProperty(latest["paint_color-relief"]["color-relief-opacity"], "color-relief-opacity"),
 	"color-relief-color": new ColorRampProperty(latest["paint_color-relief"]["color-relief-color"], "color-relief-color"),
 	"resampling": new DataConstantProperty(latest["paint_color-relief"]["resampling"], "resampling")
 });
 var color_relief_style_layer_properties_g_default = { get paint() {
-	return getPaint$6();
+	return getPaint$5();
 } };
 //#endregion
 //#region src/webgl/texture.ts
@@ -15193,39 +17244,23 @@ var DEMData = class DEMData {
 		return this.unpack(pixels[index], pixels[index + 1], pixels[index + 2]);
 	}
 };
-/**
-* Packs an elevation into the RGB channels that {@link DEMData.unpack} decodes with the given
-* unpack vector `[redFactor, greenFactor, blueFactor, baseShift]`.
-*
-* A channel whose factor is 0 contributes nothing to the decoded elevation, so it packs to 0 and
-* takes no part in the scale the other channels are quantized by. When all three factors are 0
-* every color decodes to `-baseShift`, and the packed color is black.
-*/
 function packDEMData(v, unpackVector) {
 	const redFactor = unpackVector[0];
 	const greenFactor = unpackVector[1];
 	const blueFactor = unpackVector[2];
 	const baseShift = unpackVector[3];
-	const factors = [
-		redFactor,
-		greenFactor,
-		blueFactor
-	].filter((factor) => factor !== 0);
-	if (factors.length === 0) return {
-		r: 0,
-		g: 0,
-		b: 0
-	};
-	const minScale = Math.min(...factors);
+	const minScale = Math.min(redFactor, greenFactor, blueFactor);
 	const vScaled = Math.round((v + baseShift) / minScale);
-	const packChannel = (factor) => factor === 0 ? 0 : Math.floor(vScaled * minScale / factor) % 256;
 	return {
-		r: packChannel(redFactor),
-		g: packChannel(greenFactor),
-		b: packChannel(blueFactor)
+		r: Math.floor(vScaled * minScale / redFactor) % 256,
+		g: Math.floor(vScaled * minScale / greenFactor) % 256,
+		b: Math.floor(vScaled * minScale / blueFactor) % 256
 	};
 }
 register("DEMData", DEMData);
+//#endregion
+//#region src/style/style_layer/color_relief_style_layer.ts
+const isColorReliefStyleLayer = (layer) => layer.type === "color-relief";
 var ColorReliefStyleLayer = class extends StyleLayer {
 	constructor(layer, globalState) {
 		super(layer, color_relief_style_layer_properties_g_default, globalState);
@@ -15587,11 +17622,15 @@ function indexSegment(head, stop) {
 	do {
 		const b = numBlocks++;
 		blockHead[b] = p;
-		let minX = p.x, minY = p.y, maxX = p.x, maxY = p.y;
+		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 		let k = 0;
 		do {
 			const c = p.next;
 			p.z = b;
+			if (p.x < minX) minX = p.x;
+			if (p.x > maxX) maxX = p.x;
+			if (p.y < minY) minY = p.y;
+			if (p.y > maxY) maxY = p.y;
 			if (c.x < minX) minX = c.x;
 			if (c.x > maxX) maxX = c.x;
 			if (c.y < minY) minY = c.y;
@@ -15709,8 +17748,6 @@ function indexCurve(start, minX, minY, invSize) {
 		prev = node;
 	}
 	/** @type {Node} */ prev.nextZ = null;
-	sortArr.fill(null, 0, n);
-	sortBuf.fill(null, 0, n);
 }
 /** @param {number} n */
 function sortNodes(n) {
@@ -16844,8 +18881,8 @@ register("FillBucket", FillBucket, { omit: ["layers", "patternFeatures"] });
 //#region src/style/style_layer/fill_style_layer_properties.g.ts
 let layout$4;
 const getLayout$3 = () => layout$4 = layout$4 || new Properties({ "fill-sort-key": new DataDrivenProperty(latest["layout_fill"]["fill-sort-key"], "fill-sort-key") });
-let paint$5;
-const getPaint$5 = () => paint$5 = paint$5 || new Properties({
+let paint$4;
+const getPaint$4 = () => paint$4 = paint$4 || new Properties({
 	"fill-antialias": new DataConstantProperty(latest["paint_fill"]["fill-antialias"], "fill-antialias"),
 	"fill-opacity": new DataDrivenProperty(latest["paint_fill"]["fill-opacity"], "fill-opacity"),
 	"fill-layer-opacity": new DataConstantProperty(latest["paint_fill"]["fill-layer-opacity"], "fill-layer-opacity"),
@@ -16857,12 +18894,15 @@ const getPaint$5 = () => paint$5 = paint$5 || new Properties({
 });
 var fill_style_layer_properties_g_default = {
 	get paint() {
-		return getPaint$5();
+		return getPaint$4();
 	},
 	get layout() {
 		return getLayout$3();
 	}
 };
+//#endregion
+//#region src/style/style_layer/fill_style_layer.ts
+const isFillStyleLayer = (layer) => layer.type === "fill";
 var FillStyleLayer = class extends StyleLayer {
 	constructor(layer, globalState) {
 		super(layer, fill_style_layer_properties_g_default, globalState);
@@ -17000,7 +19040,12 @@ var Bounds = class Bounds {
 		return !this.empty() && !other.empty() && other.minX <= this.maxX && other.maxX >= this.minX && other.minY <= this.maxY && other.maxY >= this.minY;
 	}
 };
-Bounds.fromPoints([new Point(0, 0), new Point(EXTENT$1, EXTENT$1)]);
+//#endregion
+//#region src/data/extent_bounds.ts
+/**
+* The bounding box covering the entire extent of a tile.
+*/
+const EXTENT_BOUNDS = Bounds.fromPoints([new Point(0, 0), new Point(EXTENT$1, EXTENT$1)]);
 /**
 * Whether an edge runs along one of the lines the tile was cut out of the world at. Clipping happens
 * on the buffer rectangle, outside the tile, so an axis parallel edge out there belongs to the cut
@@ -17550,6 +19595,9 @@ var MercatorCoordinate = class MercatorCoordinate {
 		return 1 / earthCircumference * mercatorScale(latFromMercatorY(this.y));
 	}
 };
+//#endregion
+//#region src/geo/projection/mercator_utils.ts
+const maxMercatorHorizonAngle = 89.25;
 /**
 * Returns mercator coordinates in range 0..1 for given coordinates inside a specified tile.
 * @param inTileX - X coordinate in tile units - range [0..EXTENT].
@@ -17569,6 +19617,80 @@ function tileCoordinatesToMercatorCoordinates(inTileX, inTileY, canonicalTileID)
 */
 function tileCoordinatesToLocation(inTileX, inTileY, canonicalTileID) {
 	return tileCoordinatesToMercatorCoordinates(inTileX, inTileY, canonicalTileID).toLngLat();
+}
+/**
+* Convert from LngLat to world coordinates (Mercator coordinates scaled by world size).
+* @param worldSize - Mercator world size computed from zoom level and tile size.
+* @param lnglat - The location to convert.
+* @returns Point
+*/
+function projectToWorldCoordinates(worldSize, lnglat) {
+	const lat = clamp$2(lnglat.lat, -85.051129, MAX_VALID_LATITUDE);
+	return new Point(mercatorXfromLng(lnglat.lng) * worldSize, mercatorYfromLat(lat) * worldSize);
+}
+/**
+* Convert from world coordinates (mercator coordinates scaled by world size) to LngLat.
+* @param worldSize - Mercator world size computed from zoom level and tile size.
+* @param point - World coordinate.
+* @returns LngLat
+*/
+function unprojectFromWorldCoordinates(worldSize, point) {
+	return new MercatorCoordinate(point.x / worldSize, point.y / worldSize).toLngLat();
+}
+/**
+* Calculate pixel height of the visible horizon in relation to map-center (e.g. height/2),
+* multiplied by a static factor to simulate the earth-radius.
+* The calculated value is the horizontal line from the camera-height to sea-level.
+* @returns Horizon above center in pixels.
+*/
+function getMercatorHorizon(transform) {
+	return transform.cameraToCenterDistance * Math.min(Math.tan(degreesToRadians(90 - transform.pitch)) * .85, Math.tan(degreesToRadians(maxMercatorHorizonAngle - transform.pitch)));
+}
+function calculateTileMatrix(unwrappedTileID, worldSize) {
+	const canonical = unwrappedTileID.canonical;
+	const scale = worldSize / zoomScale(canonical.z);
+	const unwrappedX = canonical.x + Math.pow(2, canonical.z) * unwrappedTileID.wrap;
+	const worldMatrix = /* @__PURE__ */ new Float64Array(16);
+	identity$2(worldMatrix);
+	translate$2(worldMatrix, worldMatrix, [
+		unwrappedX * scale,
+		canonical.y * scale,
+		0
+	]);
+	scale$5(worldMatrix, worldMatrix, [
+		scale / EXTENT$1,
+		scale / EXTENT$1,
+		1
+	]);
+	return worldMatrix;
+}
+function cameraMercatorCoordinateFromCenterAndRotation(center, elevation, pitch, bearing, distance) {
+	const centerMercator = MercatorCoordinate.fromLngLat(center, elevation);
+	const dMercator = distance * mercatorZfromAltitude(1, center.lat);
+	const { x, y, z } = cameraDirectionFromPitchBearing(pitch, bearing);
+	const dxMercator = dMercator * -x;
+	const dyMercator = dMercator * -y;
+	const dzMercator = dMercator * z;
+	return new MercatorCoordinate(centerMercator.x + dxMercator, centerMercator.y + dyMercator, centerMercator.z + dzMercator);
+}
+/**
+* Returns the position of the camera in mercator coordinates, with its altitude in `z`.
+* Computed from the center, pitch, bearing and camera distance, so it holds for any projection.
+*/
+function cameraMercatorCoordinate(transform) {
+	const pixelPerMeter = mercatorZfromAltitude(1, transform.center.lat) * transform.worldSize;
+	return cameraMercatorCoordinateFromCenterAndRotation(transform.center, transform.elevation, transform.pitch, transform.bearing, transform.cameraToCenterDistance / pixelPerMeter);
+}
+function cameraDirectionFromPitchBearing(pitch, bearing) {
+	const pitchRadians = degreesToRadians(pitch);
+	const bearingRadians = degreesToRadians(bearing);
+	const z = Math.cos(-pitchRadians);
+	const h = Math.sin(pitchRadians);
+	return {
+		x: h * Math.sin(bearingRadians),
+		y: -h * Math.cos(bearingRadians),
+		z
+	};
 }
 //#endregion
 //#region src/data/bucket/round_polygon_corners.ts
@@ -17593,60 +19715,6 @@ function getTileUnitsForMeters(distanceInMeters, canonical) {
 	const meterInMercator = MercatorCoordinate.fromLngLat(centerLocation).meterInMercatorCoordinateUnits();
 	const tileUnitsPerMercator = (1 << canonical.z) * EXTENT$1;
 	return distanceInMeters * meterInMercator * tileUnitsPerMercator;
-}
-/**
-* Cosine of the sharpest turn between two walls that is still shaded as one curved surface, 35 degrees.
-* Rounded corners split their arc into steps of 30 degrees or less.
-*/
-const SMOOTH_WALL_MIN_DOT = Math.cos(35 * Math.PI / 180);
-/**
-* How many times longer than its neighbour a wall has to be to keep its own normal where they meet.
-*/
-const LONG_WALL_RATIO = 2;
-/**
-* Returns the normals of each wall of a rounded ring, indexed by the wall's end vertex, so that the
-* lighting blends across a rounded corner. Boundary and zero-length walls get `null`.
-* @param ring - Ring as passed to the bucket, closed or open
-*/
-function roundedWallNormals(ring) {
-	const perps = [null];
-	for (let p = 1; p < ring.length; p++) {
-		const edge = ring[p].sub(ring[p - 1]);
-		const isWall = !isBoundaryEdge(ring[p], ring[p - 1]) && edge.mag() > 0;
-		perps.push(isWall ? edge._perp() : null);
-	}
-	const last = ring.length - 1;
-	const isClosed = last > 1 && ring[0].equals(ring[last]);
-	const normals = [null];
-	for (let p = 1; p <= last; p++) {
-		const perp = perps[p];
-		if (!perp) {
-			normals.push(null);
-			continue;
-		}
-		const previous = isClosed && p === 1 ? perps[last] : perps[p - 1];
-		const next = isClosed && p === last ? perps[1] : perps[p + 1];
-		normals.push({
-			start: smoothNormal(perp, previous),
-			end: smoothNormal(perp, next)
-		});
-	}
-	return normals;
-}
-/**
-* Returns the normal of a wall at the vertex it shares with a neighbouring wall. At a shallow turn both
-* walls share one normal: the much longer wall's own, which keeps a straight wall evenly lit up to the
-* arc, or else their average weighted by length. At a sharp turn the wall keeps its own.
-* @param perp - Perpendicular of the wall, as long as the wall
-* @param neighbour - Perpendicular of the neighbouring wall, if there is one
-*/
-function smoothNormal(perp, neighbour) {
-	if (!neighbour) return perp.unit();
-	const length = perp.mag();
-	const neighbourLength = neighbour.mag();
-	if (perp.x * neighbour.x + perp.y * neighbour.y < SMOOTH_WALL_MIN_DOT * length * neighbourLength || length >= LONG_WALL_RATIO * neighbourLength) return perp.unit();
-	if (neighbourLength >= LONG_WALL_RATIO * length) return neighbour.unit();
-	return perp.add(neighbour)._unit();
 }
 /**
 * Rounds the corners of a single ring.
@@ -17861,24 +19929,19 @@ var FillExtrusionBucket = class {
 	*/
 	_generateSideFaces(geometry, segmentReference) {
 		let edgeDistance = 0;
-		const wallNormals = this.layers[0].layout.get("fill-extrusion-rounded-corner-distance") > 0 ? roundedWallNormals(geometry) : null;
 		for (let p = 1; p < geometry.length; p++) {
 			const p1 = geometry[p];
 			const p2 = geometry[p - 1];
-			if (isBoundaryEdge(p1, p2) || wallNormals && !wallNormals[p]) continue;
+			if (isBoundaryEdge(p1, p2)) continue;
 			if (segmentReference.segment.vertexLength + 4 > SegmentVector.MAX_VERTEX_ARRAY_LENGTH) segmentReference.segment = this.segments.prepareSegment(4, this.layoutVertexArray, this.indexArray);
 			const perp = p1.sub(p2)._perp()._unit();
-			const { start, end } = wallNormals ? wallNormals[p] : {
-				start: perp,
-				end: perp
-			};
 			const dist = p2.dist(p1);
 			if (edgeDistance + dist > 32768) edgeDistance = 0;
-			addVertex$1(this.layoutVertexArray, p1.x, p1.y, end.x, end.y, 0, 0, edgeDistance);
-			addVertex$1(this.layoutVertexArray, p1.x, p1.y, end.x, end.y, 0, 1, edgeDistance);
+			addVertex$1(this.layoutVertexArray, p1.x, p1.y, perp.x, perp.y, 0, 0, edgeDistance);
+			addVertex$1(this.layoutVertexArray, p1.x, p1.y, perp.x, perp.y, 0, 1, edgeDistance);
 			edgeDistance += dist;
-			addVertex$1(this.layoutVertexArray, p2.x, p2.y, start.x, start.y, 0, 0, edgeDistance);
-			addVertex$1(this.layoutVertexArray, p2.x, p2.y, start.x, start.y, 0, 1, edgeDistance);
+			addVertex$1(this.layoutVertexArray, p2.x, p2.y, perp.x, perp.y, 0, 0, edgeDistance);
+			addVertex$1(this.layoutVertexArray, p2.x, p2.y, perp.x, perp.y, 0, 1, edgeDistance);
 			const bottomRight = segmentReference.segment.vertexLength;
 			this.indexArray.emplaceBack(bottomRight, bottomRight + 2, bottomRight + 1);
 			this.indexArray.emplaceBack(bottomRight + 1, bottomRight + 2, bottomRight + 3);
@@ -17905,8 +19968,8 @@ register("FillExtrusionBucket", FillExtrusionBucket, { omit: ["layers", "feature
 //#region src/style/style_layer/fill_extrusion_style_layer_properties.g.ts
 let layout$2;
 const getLayout$2 = () => layout$2 = layout$2 || new Properties({ "fill-extrusion-rounded-corner-distance": new DataConstantProperty(latest["layout_fill-extrusion"]["fill-extrusion-rounded-corner-distance"], "fill-extrusion-rounded-corner-distance") });
-let paint$4;
-const getPaint$4 = () => paint$4 = paint$4 || new Properties({
+let paint$3;
+const getPaint$3 = () => paint$3 = paint$3 || new Properties({
 	"fill-extrusion-opacity": new DataConstantProperty(latest["paint_fill-extrusion"]["fill-extrusion-opacity"], "fill-extrusion-opacity"),
 	"fill-extrusion-color": new DataDrivenProperty(latest["paint_fill-extrusion"]["fill-extrusion-color"], "fill-extrusion-color"),
 	"fill-extrusion-translate": new DataConstantProperty(latest["paint_fill-extrusion"]["fill-extrusion-translate"], "fill-extrusion-translate"),
@@ -17918,12 +19981,13 @@ const getPaint$4 = () => paint$4 = paint$4 || new Properties({
 });
 var fill_extrusion_style_layer_properties_g_default = {
 	get paint() {
-		return getPaint$4();
+		return getPaint$3();
 	},
 	get layout() {
 		return getLayout$2();
 	}
 };
+const isFillExtrusionStyleLayer = (layer) => layer.type === "fill-extrusion";
 var FillExtrusionStyleLayer = class extends StyleLayer {
 	constructor(layer, globalState) {
 		super(layer, fill_extrusion_style_layer_properties_g_default, globalState);
@@ -18072,14 +20136,6 @@ function projectQueryGeometry(queryGeometry, pixelPosMatrix, z) {
 * @param sqTolerance - square tolerance value
 */
 function simplify(coords, first, last, sqTolerance) {
-	const stack = [first, last];
-	while (stack.length) {
-		last = stack.pop();
-		first = stack.pop();
-		simplifySegment(coords, first, last, sqTolerance, stack);
-	}
-}
-function simplifySegment(coords, first, last, sqTolerance, stack) {
 	let maxSqDist = sqTolerance;
 	const mid = first + (last - first >> 1);
 	let minPosToMid = last - first;
@@ -18104,9 +20160,9 @@ function simplifySegment(coords, first, last, sqTolerance, stack) {
 		}
 	}
 	if (maxSqDist > sqTolerance) {
+		if (index - first > 3) simplify(coords, first, index, sqTolerance);
 		coords[index + 2] = maxSqDist;
-		if (index - first > 3) stack.push(first, index);
-		if (last - index > 3) stack.push(index, last);
+		if (last - index > 3) simplify(coords, index, last, sqTolerance);
 	}
 }
 /**
@@ -18306,10 +20362,8 @@ function convertLine(ring, out, tolerance, isPolygon) {
 		const x = projectX(ring[j][0]);
 		const y = projectY(ring[j][1]);
 		out.points.push(x, y, 0);
-		if (j > 0) {
-			if (isPolygon) size += (x0 * y - x * y0) / 2;
-			else size += Math.sqrt(Math.pow(x - x0, 2) + Math.pow(y - y0, 2));
-		}
+		if (j > 0) if (isPolygon) size += (x0 * y - x * y0) / 2;
+		else size += Math.sqrt(Math.pow(x - x0, 2) + Math.pow(y - y0, 2));
 		x0 = x;
 		y0 = y;
 	}
@@ -19266,10 +21320,9 @@ var ClusterTileIndex = class {
 		const children = this.getChildren(clusterId);
 		for (const child of children) {
 			const props = child.properties;
-			if (props?.cluster) {
-				if (skipped + props.point_count <= offset) skipped += props.point_count;
-				else skipped = this.appendLeaves(result, props.cluster_id, limit, offset, skipped);
-			} else if (skipped < offset) skipped++;
+			if (props?.cluster) if (skipped + props.point_count <= offset) skipped += props.point_count;
+			else skipped = this.appendLeaves(result, props.cluster_id, limit, offset, skipped);
+			else if (skipped < offset) skipped++;
 			else result.push(child);
 			if (result.length === limit) break;
 		}
@@ -19968,23 +22021,15 @@ var GeoJSONVT = class {
 };
 //#endregion
 //#region src/data/bucket/line_attributes.ts
-const lineLayoutAttributes = createLayout([
-	{
-		name: "a_pos_normal",
-		components: 2,
-		type: "Int16"
-	},
-	{
-		name: "a_data",
-		components: 4,
-		type: "Uint8"
-	},
-	{
-		name: "a_offset_normal",
-		components: 2,
-		type: "Int8"
-	}
-], 2);
+const lineLayoutAttributes = createLayout([{
+	name: "a_pos_normal",
+	components: 2,
+	type: "Int16"
+}, {
+	name: "a_data",
+	components: 4,
+	type: "Uint8"
+}], 4);
 const members$1 = lineLayoutAttributes.members;
 lineLayoutAttributes.size;
 lineLayoutAttributes.alignment;
@@ -20008,17 +22053,6 @@ const EXTRUDE_SCALE = 63;
 const COS_HALF_SHARP_CORNER = Math.cos(75 / 2 * (Math.PI / 180));
 const SHARP_CORNER_OFFSET = 15;
 const DEG_PER_TRIANGLE = 20;
-/**
-* Longest miter vector `line-offset` follows into a corner. It is also as far as the vector can be
-* stored: a_offset_normal holds bytes scaled by EXTRUDE_SCALE, which cap out at 127 / 63.
-*/
-const MAX_OFFSET_MITER_LENGTH = 2;
-/**
-* Miter length at which `line-offset` starts easing from the miter vector of a join to the plain
-* segment normals. The bisector of a near hairpin points along the line rather than across it, so a
-* corner that sharp is offset forwards past its neighbours instead of sideways.
-*/
-const OFFSET_FALLBACK_START = 3;
 const LINE_DISTANCE_SCALE = 1 / 2;
 const MAX_LINE_DISTANCE = Math.pow(2, 14) / LINE_DISTANCE_SCALE;
 /**
@@ -20182,8 +22216,6 @@ var LineBucket = class {
 			const approxAngle = 2 * Math.sqrt(2 - 2 * cosHalfAngle);
 			const isSharpCorner = cosHalfAngle < COS_HALF_SHARP_CORNER && prevVertex && nextVertex;
 			const lineTurnsLeft = prevNormal.x * nextNormal.y - prevNormal.y * nextNormal.x > 0;
-			const offsetNormal = joinNormal.mult(Math.min(miterLength, MAX_OFFSET_MITER_LENGTH));
-			const offsetFallback = clamp$2((miterLength - OFFSET_FALLBACK_START) / 5, 0, 1);
 			if (isSharpCorner && i > first) {
 				const prevSegmentLength = currentVertex.dist(prevVertex);
 				if (prevSegmentLength > 2 * sharpCornerOffset) {
@@ -20207,20 +22239,20 @@ var LineBucket = class {
 			if (prevVertex) this.updateDistance(prevVertex, currentVertex);
 			if (currentJoin === "miter") {
 				joinNormal._mult(miterLength);
-				this.addCurrentVertex(currentVertex, joinNormal, 0, 0, segment, false, offsetNormal);
+				this.addCurrentVertex(currentVertex, joinNormal, 0, 0, segment);
 			} else if (currentJoin === "flipbevel") {
 				if (miterLength > 100) joinNormal = nextNormal.mult(-1);
 				else {
 					const bevelLength = miterLength * prevNormal.add(nextNormal).mag() / prevNormal.sub(nextNormal).mag();
 					joinNormal._perp()._mult(bevelLength * (lineTurnsLeft ? -1 : 1));
 				}
-				this.addCurrentVertex(currentVertex, joinNormal, 0, 0, segment, false, offsetNormal, offsetFallback);
-				this.addCurrentVertex(currentVertex, joinNormal.mult(-1), 0, 0, segment, false, offsetNormal, offsetFallback);
+				this.addCurrentVertex(currentVertex, joinNormal, 0, 0, segment);
+				this.addCurrentVertex(currentVertex, joinNormal.mult(-1), 0, 0, segment);
 			} else if (currentJoin === "bevel" || currentJoin === "fakeround") {
 				const offset = -Math.sqrt(miterLength * miterLength - 1);
 				const offsetA = lineTurnsLeft ? offset : 0;
 				const offsetB = lineTurnsLeft ? 0 : offset;
-				if (prevVertex) this.addCurrentVertex(currentVertex, prevNormal, offsetA, offsetB, segment, false, offsetNormal);
+				if (prevVertex) this.addCurrentVertex(currentVertex, prevNormal, offsetA, offsetB, segment);
 				if (currentJoin === "fakeround") {
 					const n = Math.round(approxAngle * 180 / Math.PI / DEG_PER_TRIANGLE);
 					for (let m = 1; m < n; m++) {
@@ -20232,22 +22264,22 @@ var LineBucket = class {
 							t = t + t * t2 * (t - 1) * (A * t2 * t2 + B);
 						}
 						const extrude = nextNormal.sub(prevNormal)._mult(t)._add(prevNormal)._unit()._mult(lineTurnsLeft ? -1 : 1);
-						this.addHalfVertex(currentVertex, extrude.x, extrude.y, lineTurnsLeft ? -offsetNormal.x : offsetNormal.x, lineTurnsLeft ? -offsetNormal.y : offsetNormal.y, false, lineTurnsLeft, segment);
+						this.addHalfVertex(currentVertex, extrude.x, extrude.y, false, lineTurnsLeft, 0, segment);
 					}
 				}
-				if (nextVertex) this.addCurrentVertex(currentVertex, nextNormal, -offsetA, -offsetB, segment, false, offsetNormal);
-			} else if (currentJoin === "butt") this.addCurrentVertex(currentVertex, joinNormal, 0, 0, segment, false, offsetNormal);
+				if (nextVertex) this.addCurrentVertex(currentVertex, nextNormal, -offsetA, -offsetB, segment);
+			} else if (currentJoin === "butt") this.addCurrentVertex(currentVertex, joinNormal, 0, 0, segment);
 			else if (currentJoin === "square") {
 				const offset = prevVertex ? 1 : -1;
-				this.addCurrentVertex(currentVertex, joinNormal, offset, offset, segment, false, offsetNormal);
+				this.addCurrentVertex(currentVertex, joinNormal, offset, offset, segment);
 			} else if (currentJoin === "round") {
 				if (prevVertex) {
-					this.addCurrentVertex(currentVertex, prevNormal, 0, 0, segment, false, offsetNormal, offsetFallback);
-					this.addCurrentVertex(currentVertex, prevNormal, 1, 1, segment, true, offsetNormal, offsetFallback);
+					this.addCurrentVertex(currentVertex, prevNormal, 0, 0, segment);
+					this.addCurrentVertex(currentVertex, prevNormal, 1, 1, segment, true);
 				}
 				if (nextVertex) {
-					this.addCurrentVertex(currentVertex, nextNormal, -1, -1, segment, true, offsetNormal, offsetFallback);
-					this.addCurrentVertex(currentVertex, nextNormal, 0, 0, segment, false, offsetNormal, offsetFallback);
+					this.addCurrentVertex(currentVertex, nextNormal, -1, -1, segment, true);
+					this.addCurrentVertex(currentVertex, nextNormal, 0, 0, segment);
 				}
 			}
 			if (isSharpCorner && i < len - 1) {
@@ -20270,41 +22302,23 @@ var LineBucket = class {
 	* @param endRight - extrude to shift the left vertex along the line
 	* @param segment - the segment object to add the vertex to
 	* @param round - whether this is a round cap
-	* @param offsetNormal - the vector `line-offset` moves this vertex along. An offset line turns its corner where
-	* the two offset segments meet, on the angle bisector `miterLength` away, so every vertex of a join shares that
-	* vector. Defaults to the vertex normal, which is where a vertex outside a join belongs.
-	* @param offsetFallback - how far to ease `offsetNormal` back to the vertex normal, see {@link OFFSET_FALLBACK_START}
 	*/
-	addCurrentVertex(p, normal, endLeft, endRight, segment, round = false, offsetNormal = normal, offsetFallback = 0) {
+	addCurrentVertex(p, normal, endLeft, endRight, segment, round = false) {
 		const leftX = normal.x + normal.y * endLeft;
 		const leftY = normal.y - normal.x * endLeft;
 		const rightX = -normal.x + normal.y * endRight;
 		const rightY = -normal.y - normal.x * endRight;
-		const offsetX = offsetNormal.x + (normal.x - offsetNormal.x) * offsetFallback;
-		const offsetY = offsetNormal.y + (normal.y - offsetNormal.y) * offsetFallback;
-		this.addHalfVertex(p, leftX, leftY, offsetX, offsetY, round, false, segment);
-		this.addHalfVertex(p, rightX, rightY, -offsetX, -offsetY, round, true, segment);
+		this.addHalfVertex(p, leftX, leftY, round, false, endLeft, segment);
+		this.addHalfVertex(p, rightX, rightY, round, true, -endRight, segment);
 		if (this.distance > MAX_LINE_DISTANCE / 2 && this.totalDistance === 0) {
 			this.distance = 0;
 			this.updateScaledDistance();
-			this.addCurrentVertex(p, normal, endLeft, endRight, segment, round, offsetNormal, offsetFallback);
+			this.addCurrentVertex(p, normal, endLeft, endRight, segment, round);
 		}
 	}
-	/**
-	* Add a single vertex to the buffers.
-	*
-	* @param p - the line vertex to add a buffer vertex for
-	* @param extrudeX - x of the vector the vertex is extruded along by half the line width
-	* @param extrudeY - y of the vector the vertex is extruded along by half the line width
-	* @param offsetX - x of the vector `line-offset` moves the vertex along
-	* @param offsetY - y of the vector `line-offset` moves the vertex along
-	* @param round - whether this is a round cap
-	* @param up - whether this is the vertex on the positive side of the normal
-	* @param segment - the segment object to add the vertex to
-	*/
-	addHalfVertex({ x, y }, extrudeX, extrudeY, offsetX, offsetY, round, up, segment) {
+	addHalfVertex({ x, y }, extrudeX, extrudeY, round, up, dir, segment) {
 		const linesofarScaled = (this.lineClips ? this.scaledDistance * (MAX_LINE_DISTANCE - 1) : this.scaledDistance) * LINE_DISTANCE_SCALE;
-		this.layoutVertexArray.emplaceBack((x << 1) + (round ? 1 : 0), (y << 1) + (up ? 1 : 0), Math.round(EXTRUDE_SCALE * extrudeX) + 128, Math.round(EXTRUDE_SCALE * extrudeY) + 128, (linesofarScaled & 63) << 2, linesofarScaled >> 6, Math.round(EXTRUDE_SCALE * offsetX), Math.round(EXTRUDE_SCALE * offsetY));
+		this.layoutVertexArray.emplaceBack((x << 1) + (round ? 1 : 0), (y << 1) + (up ? 1 : 0), Math.round(EXTRUDE_SCALE * extrudeX) + 128, Math.round(EXTRUDE_SCALE * extrudeY) + 128, (dir === 0 ? 0 : dir < 0 ? -1 : 1) + 1 | (linesofarScaled & 63) << 2, linesofarScaled >> 6);
 		if (this.lineClips) {
 			const uvX = (this.scaledDistance - this.lineClips.start) / (this.lineClips.end - this.lineClips.start);
 			this.layoutVertexArray2.emplaceBack(uvX, this.lineClipsArray.length);
@@ -20373,8 +22387,8 @@ const getLayout$1 = () => layout$1 = layout$1 || new Properties({
 	"line-round-limit": new DataDrivenProperty(latest["layout_line"]["line-round-limit"], "line-round-limit"),
 	"line-sort-key": new DataDrivenProperty(latest["layout_line"]["line-sort-key"], "line-sort-key")
 });
-let paint$3;
-const getPaint$3 = () => paint$3 = paint$3 || new Properties({
+let paint$2;
+const getPaint$2 = () => paint$2 = paint$2 || new Properties({
 	"line-opacity": new DataDrivenProperty(latest["paint_line"]["line-opacity"], "line-opacity"),
 	"line-layer-opacity": new DataConstantProperty(latest["paint_line"]["line-layer-opacity"], "line-layer-opacity"),
 	"line-color": new DataDrivenProperty(latest["paint_line"]["line-color"], "line-color"),
@@ -20390,7 +22404,7 @@ const getPaint$3 = () => paint$3 = paint$3 || new Properties({
 });
 var line_style_layer_properties_g_default = {
 	get paint() {
-		return getPaint$3();
+		return getPaint$2();
 	},
 	get layout() {
 		return getLayout$1();
@@ -20414,6 +22428,7 @@ var LineFloorwidthProperty = class extends DataDrivenProperty {
 	}
 };
 let lineFloorwidthProperty;
+const isLineStyleLayer = (layer) => layer.type === "line";
 var LineStyleLayer = class extends StyleLayer {
 	constructor(layer, globalState) {
 		super(layer, line_style_layer_properties_g_default, globalState);
@@ -20568,7 +22583,7 @@ const collisionBoxLayout = createLayout([
 		type: "Int16"
 	}
 ], 4);
-createLayout([
+const collisionCircleLayout = createLayout([
 	{
 		name: "a_pos",
 		components: 2,
@@ -20887,6 +22902,13 @@ function codePointIsInCursiveScript(codePoint) {
 */
 function codePointIsInRTLScript(codePoint) {
 	return /[\u0591-\u05C7\u05D0-\u05EA\u05EF-\u05F4\u0600-\u0604\u0606-\u060B\u060D-\u061A\u061C-\u061E\u0620-\u063F\u0641-\u064A\u0656-\u066F\u0671-\u06DC\u06DE-\u070D\u070F-\u074A\u074D-\u07B1\u07C0-\u07FA\u07FD-\u082D\u0830-\u083E\u0840-\u085B\u085E\u0860-\u086A\u0870-\u0891\u0897-\u08E1\u08E3-\u08FF\uFB1D-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFD3D\uFD40-\uFDCF\uFDF0-\uFDFF\uFE70-\uFE74\uFE76-\uFEFC]|\uD802[\uDC00-\uDC05\uDC08\uDC0A-\uDC35\uDC37\uDC38\uDC3C\uDC3F-\uDC55\uDC57-\uDC9E\uDCA7-\uDCAF\uDCE0-\uDCF2\uDCF4\uDCF5\uDCFB-\uDD1B\uDD1F-\uDD39\uDD3F-\uDD59\uDD80-\uDDB7\uDDBC-\uDDCF\uDDD2-\uDE03\uDE05\uDE06\uDE0C-\uDE13\uDE15-\uDE17\uDE19-\uDE35\uDE38-\uDE3A\uDE3F-\uDE48\uDE50-\uDE58\uDE60-\uDE9F\uDEC0-\uDEE6\uDEEB-\uDEF6\uDF00-\uDF35\uDF39-\uDF55\uDF58-\uDF72\uDF78-\uDF91\uDF99-\uDF9C\uDFA9-\uDFAF]|\uD803[\uDC00-\uDC48\uDC80-\uDCB2\uDCC0-\uDCF2\uDCFA-\uDD27\uDD30-\uDD39\uDD40-\uDD65\uDD69-\uDD85\uDD8E\uDD8F\uDE60-\uDE7E\uDE80-\uDEA9\uDEAB-\uDEAD\uDEB0\uDEB1\uDEC2-\uDEC7\uDED0-\uDED8\uDEFA-\uDF27\uDF30-\uDF59\uDF70-\uDF89\uDFB0-\uDFCB\uDFE0-\uDFF6]|\uD83A[\uDC00-\uDCC4\uDCC7-\uDCD6\uDD00-\uDD4B\uDD50-\uDD59\uDD5E\uDD5F]|\uD83B[\uDE00-\uDE03\uDE05-\uDE1F\uDE21\uDE22\uDE24\uDE27\uDE29-\uDE32\uDE34-\uDE37\uDE39\uDE3B\uDE42\uDE47\uDE49\uDE4B\uDE4D-\uDE4F\uDE51\uDE52\uDE54\uDE57\uDE59\uDE5B\uDE5D\uDE5F\uDE61\uDE62\uDE64\uDE67-\uDE6A\uDE6C-\uDE72\uDE74-\uDE77\uDE79-\uDE7C\uDE7E\uDE80-\uDE89\uDE8B-\uDE9B\uDEA1-\uDEA3\uDEA5-\uDEA9\uDEAB-\uDEBB\uDEF0\uDEF1]/gim.test(String.fromCodePoint(codePoint));
+}
+/**
+* Returns whether the fallback fonts specified by the
+* `localIdeographFontFamily` map option apply to the given codepoint. 
+*/
+function codePointUsesLocalIdeographFontFamily(codePoint) {
+	return /[\u02EA\u02EB\u1100-\u11FF\u2E80-\u2FDF\u3000-\u30FF\u3105-\u312F\u3131-\u318E\u31A0-\u4DBF\u4E00-\uA48C\uA490-\uA4C6\uA960-\uA97C\uAC00-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFE10-\uFE1F\uFE30-\uFE4F\uFF00-\uFFEF]|\uD81B[\uDFE0-\uDFFF]|[\uD81C-\uD822\uD840-\uD868\uD86A-\uD86D\uD86F-\uD872\uD874-\uD879\uD880-\uD883\uD885-\uD88C][\uDC00-\uDFFF]|\uD823[\uDC00-\uDCD5\uDCFF-\uDD1E\uDD80-\uDDF2]|\uD82B[\uDFF0-\uDFFF]|\uD82C[\uDC00-\uDEFB]|\uD83C[\uDE00-\uDEFF]|\uD869[\uDC00-\uDEDF\uDF00-\uDFFF]|\uD86E[\uDC00-\uDC1D\uDC20-\uDFFF]|\uD873[\uDC00-\uDEAD\uDEB0-\uDFFF]|\uD87A[\uDC00-\uDFE0\uDFF0-\uDFFF]|\uD87B[\uDC00-\uDE5D]|\uD87E[\uDC00-\uDE1D]|\uD884[\uDC00-\uDF4A\uDF50-\uDFFF]|\uD88D[\uDC00-\uDC79]/gim.test(String.fromCodePoint(codePoint));
 }
 /**
 * Returns whether the given codepoint participates in ideographic line
@@ -22200,16 +24222,10 @@ var TaggedString = class TaggedString {
 	* plus, in scripts that do not space their words and so offer no such character, wherever the
 	* word segmenter finds a word. It is not consulted elsewhere, isolating a comma as a word of its
 	* own, nor until such a script turns up, costing more than the rest of this put together.
-	*
-	* Text that fits on one line is left unbroken without weighing any break, unless it asks for a
-	* newline, has no width (which ties with every break) or uses negative spacing (which can make
-	* spaces advance backwards).
 	*/
 	determineLineBreaks(spacing, maxWidth, glyphMap, imagePositions, layoutTextSize) {
-		const totalWidth = this.determineTotalWidth(spacing, glyphMap, imagePositions, layoutTextSize);
-		if (spacing >= 0 && totalWidth > 0 && totalWidth <= maxWidth && !/[\n\r]/.test(this.text)) return [this.length()];
 		const potentialLineBreaks = [];
-		const targetWidth = totalWidth / Math.max(1, Math.ceil(totalWidth / maxWidth));
+		const targetWidth = this.determineAverageLineWidth(spacing, maxWidth, glyphMap, imagePositions, layoutTextSize);
 		const hasZeroWidthSpaces = this.hasZeroWidthSpaces();
 		const graphemes = this.graphemes();
 		let wordStarts = null;
@@ -22229,7 +24245,7 @@ var TaggedString = class TaggedString {
 		}
 		return leastBadBreaks(evaluateBreak(this.length(), currentX, targetWidth, potentialLineBreaks, 0, true));
 	}
-	determineTotalWidth(spacing, glyphMap, imagePositions, layoutTextSize) {
+	determineAverageLineWidth(spacing, maxWidth, glyphMap, imagePositions, layoutTextSize) {
 		let totalWidth = 0;
 		let index = 0;
 		for (const grapheme of this.graphemes()) {
@@ -22237,7 +24253,8 @@ var TaggedString = class TaggedString {
 			totalWidth += getGlyphAdvance(grapheme, section, glyphMap, imagePositions, spacing, layoutTextSize);
 			index++;
 		}
-		return totalWidth;
+		const lineCount = Math.max(1, Math.ceil(totalWidth / maxWidth));
+		return totalWidth / lineCount;
 	}
 };
 //#endregion
@@ -23892,8 +25909,49 @@ function writeUtf8(buf, str, pos) {
 	}
 	return pos;
 }
+function readFontstacks(tag, glyphs, pbf) {
+	if (tag === 1) pbf.readMessage(readFontstack, glyphs);
+}
+function readFontstack(tag, glyphs, pbf) {
+	if (tag === 3) {
+		const { id, bitmap, width, height, left, top, advance } = pbf.readMessage(readGlyph, {});
+		glyphs.push({
+			id,
+			bitmap: new AlphaImage({
+				width: width + 6,
+				height: height + 6
+			}, bitmap),
+			metrics: {
+				width,
+				height,
+				left,
+				top,
+				advance
+			}
+		});
+	}
+}
+function readGlyph(tag, glyph, pbf) {
+	if (tag === 1) glyph.id = pbf.readVarint();
+	else if (tag === 2) glyph.bitmap = pbf.readBytes();
+	else if (tag === 3) glyph.width = pbf.readVarint();
+	else if (tag === 4) glyph.height = pbf.readVarint();
+	else if (tag === 5) glyph.left = pbf.readSVarint();
+	else if (tag === 6) glyph.top = pbf.readSVarint();
+	else if (tag === 7) glyph.advance = pbf.readVarint();
+}
+function parseGlyphPbf(data) {
+	return new PbfReader(data).readFields(readFontstacks, []);
+}
 function isStyleImageWebGLData(data) {
 	return typeof data?.renderWithWebGL === "function";
+}
+function renderStyleImage(image) {
+	const { userImage } = image;
+	if (!userImage?.render) return false;
+	if (!userImage.render()) return false;
+	if (!isStyleImageWebGLData(userImage.data)) image.data.replace(new Uint8Array(userImage.data.buffer));
+	return true;
 }
 //#endregion
 //#region node_modules/potpack/index.js
@@ -24760,6 +26818,46 @@ function getCoveringZoomStops(zoomStops, tileZoom) {
 */
 function evaluateSizesAtZoomStops(expression) {
 	return expression.zoomStops.map((zoomStop) => expression.evaluate(new EvaluationParameters(zoomStop === -Infinity ? expression.zoomStops[1] - 1 : zoomStop)));
+}
+function evaluateSizeForFeature(sizeData, { uSize, uSizeT }, { lowerSize, upperSize }) {
+	if (sizeData.kind === "source") return lowerSize / 128;
+	else if (sizeData.kind === "composite") return interpolateFactory.number(lowerSize / 128, upperSize / 128, uSizeT);
+	return uSize;
+}
+/**
+* Computes a bucket's size uniforms at the zoom being drawn, which on a retained tile
+* differs from the zoom the bucket was built for.
+*/
+function evaluateSizeForZoom(sizeData, zoom) {
+	let uSizeT = 0;
+	let uSize = 0;
+	if (sizeData.kind === "constant") uSize = sizeData.layoutSize;
+	else if (sizeData.kind === "camera") uSize = evaluateCameraSize(sizeData, zoom);
+	else if (sizeData.kind === "composite") uSizeT = evaluateCompositeInterpolationFactor(sizeData, zoom);
+	return {
+		uSizeT,
+		uSize
+	};
+}
+/**
+* Evaluates a camera size at the drawn zoom, interpolating between the stops around it.
+* Capped at `layoutSize`, the size the tile's collision boxes were built for: drawing
+* larger than that would let labels overlap.
+*/
+function evaluateCameraSize({ zoomStops, sizes, layoutSize, interpolationType }, zoom) {
+	let lower = zoomStops.length - 1;
+	while (lower > 0 && zoomStops[lower] > zoom) lower--;
+	const upper = Math.min(lower + 1, zoomStops.length - 1);
+	const t = !interpolationType ? 0 : clamp$2(Interpolate.interpolationFactor(interpolationType, zoom, zoomStops[lower], zoomStops[upper]), 0, 1);
+	return Math.min(interpolateFactory.number(sizes[lower], sizes[upper], t), layoutSize);
+}
+/**
+* Computes how far the drawn zoom sits between a composite size's two stops, clamped
+* into `[0, 1]`: each feature only stores its size at those two stops, so all the
+* renderer can do is blend between them.
+*/
+function evaluateCompositeInterpolationFactor({ interpolationType, minZoom, maxZoom }, zoom) {
+	return !interpolationType ? 0 : clamp$2(Interpolate.interpolationFactor(interpolationType, zoom, minZoom, maxZoom), 0, 1);
 }
 //#endregion
 //#region src/symbol/anchor.ts
@@ -26490,8 +28588,8 @@ const getLayout = () => layout = layout || new Properties({
 	"symbol-height-offset": new DataDrivenProperty(latest["layout_symbol"]["symbol-height-offset"], "symbol-height-offset"),
 	"symbol-height-anchor": new DataConstantProperty(latest["layout_symbol"]["symbol-height-anchor"], "symbol-height-anchor")
 });
-let paint$2;
-const getPaint$2 = () => paint$2 = paint$2 || new Properties({
+let paint$1;
+const getPaint$1 = () => paint$1 = paint$1 || new Properties({
 	"icon-opacity": new DataDrivenProperty(latest["paint_symbol"]["icon-opacity"], "icon-opacity"),
 	"icon-color": new DataDrivenProperty(latest["paint_symbol"]["icon-color"], "icon-color"),
 	"icon-halo-color": new DataDrivenProperty(latest["paint_symbol"]["icon-halo-color"], "icon-halo-color"),
@@ -26513,7 +28611,7 @@ const getPaint$2 = () => paint$2 = paint$2 || new Properties({
 });
 var symbol_style_layer_properties_g_default = {
 	get paint() {
-		return getPaint$2();
+		return getPaint$1();
 	},
 	get layout() {
 		return getLayout();
@@ -26549,6 +28647,9 @@ var FormatSectionOverride = class {
 	}
 };
 register("FormatSectionOverride", FormatSectionOverride, { omit: ["defaultValue"] });
+//#endregion
+//#region src/style/style_layer/symbol_style_layer.ts
+const isSymbolStyleLayer = (layer) => layer.type === "symbol";
 var SymbolStyleLayer = class SymbolStyleLayer extends StyleLayer {
 	constructor(layer, globalState) {
 		super(layer, symbol_style_layer_properties_g_default, globalState);
@@ -26643,42 +28744,34 @@ function getIconPadding(layout, feature, canonical, pixelRatio = 1) {
 }
 //#endregion
 //#region src/style/style_layer/background_style_layer_properties.g.ts
-let paint$1;
-const getPaint$1 = () => paint$1 = paint$1 || new Properties({
+let paint;
+const getPaint = () => paint = paint || new Properties({
 	"background-color": new DataConstantProperty(latest["paint_background"]["background-color"], "background-color"),
 	"background-pattern": new CrossFadedProperty(latest["paint_background"]["background-pattern"], "background-pattern"),
 	"background-opacity": new DataConstantProperty(latest["paint_background"]["background-opacity"], "background-opacity")
 });
 var background_style_layer_properties_g_default = { get paint() {
-	return getPaint$1();
+	return getPaint();
 } };
+//#endregion
+//#region src/style/style_layer/background_style_layer.ts
+const isBackgroundStyleLayer = (layer) => layer.type === "background";
 var BackgroundStyleLayer = class extends StyleLayer {
 	constructor(layer, globalState) {
 		super(layer, background_style_layer_properties_g_default, globalState);
 	}
 };
 //#endregion
-//#region src/style/style_layer/raster_style_layer_properties.g.ts
-let paint;
-const getPaint = () => paint = paint || new Properties({
-	"raster-opacity": new DataConstantProperty(latest["paint_raster"]["raster-opacity"], "raster-opacity"),
-	"raster-hue-rotate": new DataConstantProperty(latest["paint_raster"]["raster-hue-rotate"], "raster-hue-rotate"),
-	"raster-brightness-min": new DataConstantProperty(latest["paint_raster"]["raster-brightness-min"], "raster-brightness-min"),
-	"raster-brightness-max": new DataConstantProperty(latest["paint_raster"]["raster-brightness-max"], "raster-brightness-max"),
-	"raster-saturation": new DataConstantProperty(latest["paint_raster"]["raster-saturation"], "raster-saturation"),
-	"raster-contrast": new DataConstantProperty(latest["paint_raster"]["raster-contrast"], "raster-contrast"),
-	"resampling": new DataConstantProperty(latest["paint_raster"]["resampling"], "resampling"),
-	"raster-resampling": new DataConstantProperty(latest["paint_raster"]["raster-resampling"], "raster-resampling"),
-	"raster-fade-duration": new DataConstantProperty(latest["paint_raster"]["raster-fade-duration"], "raster-fade-duration")
-});
-var raster_style_layer_properties_g_default = { get paint() {
-	return getPaint();
-} };
-var RasterStyleLayer = class extends StyleLayer {
-	constructor(layer, globalState) {
-		super(layer, raster_style_layer_properties_g_default, globalState);
-	}
-};
+//#region src/style/style_layer/custom_style_layer.ts
+function validateCustomStyleLayer(layerObject) {
+	const errors = [];
+	const id = layerObject.id;
+	if (id === void 0) errors.push(new ValidationError(`layers.${id}`, null, "missing required property \"id\""));
+	if (layerObject.render === void 0) errors.push(new ValidationError(`layers.${id}`, null, "missing required method \"render\""));
+	if (layerObject.renderingMode && layerObject.renderingMode !== "2d" && layerObject.renderingMode !== "3d") errors.push(new ValidationError(`layers.${id}`, null, "property \"renderingMode\" must be either \"2d\" or \"3d\""));
+	return errors;
+}
+const isCustomStyleLayer = (layer) => layer.type === "custom";
 var CustomStyleLayer = class extends StyleLayer {
 	constructor(implementation, globalState) {
 		super(implementation, {}, globalState);
@@ -26722,6 +28815,436 @@ function createStyleLayer(layer, globalState) {
 		case "symbol": return new SymbolStyleLayer(layer, globalState);
 	}
 }
+//#endregion
+//#region src/util/throttled_invoker.ts
+/**
+* Invokes the wrapped function in a non-blocking way when trigger() is called.
+* Invocation requests are ignored until the function was actually invoked.
+*/
+var ThrottledInvoker = class {
+	constructor(methodToThrottle) {
+		this._methodToThrottle = methodToThrottle;
+		this._triggered = false;
+		this._channel = new MessageChannel();
+		this._channel.port2.onmessage = () => {
+			this._triggered = false;
+			this._methodToThrottle();
+		};
+	}
+	trigger() {
+		if (this._triggered) return;
+		this._triggered = true;
+		this._channel?.port1.postMessage(true);
+	}
+	remove() {
+		delete this._channel;
+		this._methodToThrottle = () => {};
+	}
+};
+//#endregion
+//#region src/util/actor.ts
+const addEventDefaultOptions = { once: true };
+/**
+* An implementation of the [Actor design pattern](https://en.wikipedia.org/wiki/Actor_model)
+* that maintains the relationship between asynchronous tasks and the objects
+* that spin them off - in this case, tasks like parsing parts of styles,
+* owned by the styles
+*/
+var Actor = class {
+	/**
+	* @param target - The target
+	* @param mapId - A unique identifier for the Map instance using this Actor.
+	*/
+	constructor(target, mapId) {
+		this.target = target;
+		this.mapId = mapId;
+		this.resolveRejects = {};
+		this.tasks = {};
+		this.taskQueue = [];
+		this.abortControllers = {};
+		this.messageHandlers = {};
+		this.invoker = new ThrottledInvoker(() => this.process());
+		this.subscription = subscribe(this.target, "message", (message) => this.receive(message), false);
+		this.globalScope = isWorker(self) ? target : window;
+	}
+	registerMessageHandler(type, handler) {
+		this.messageHandlers[type] = handler;
+	}
+	unregisterMessageHandler(type) {
+		delete this.messageHandlers[type];
+	}
+	/**
+	* Sends a message from a main-thread map to a Worker or from a Worker back to
+	* a main-thread map instance.
+	* @param message - the message to send
+	* @param abortController - an optional AbortController to abort the request
+	* @returns a promise that will be resolved with the response data
+	*/
+	sendAsync(message, abortController) {
+		return new Promise((resolve, reject) => {
+			const id = Math.round(Math.random() * 0xde0b6b3a7640000).toString(36).substring(0, 10);
+			const subscription = abortController ? subscribe(abortController.signal, "abort", () => {
+				subscription?.unsubscribe();
+				delete this.resolveRejects[id];
+				const cancelMessage = {
+					id,
+					type: "<cancel>",
+					origin: location.origin,
+					targetMapId: message.targetMapId,
+					sourceMapId: this.mapId
+				};
+				this.target.postMessage(cancelMessage);
+				reject(new AbortError(abortController.signal.reason));
+			}, addEventDefaultOptions) : null;
+			this.resolveRejects[id] = {
+				resolve: (value) => {
+					subscription?.unsubscribe();
+					resolve(value);
+				},
+				reject: (reason) => {
+					subscription?.unsubscribe();
+					reject(reason);
+				}
+			};
+			const buffers = [];
+			const messageToPost = {
+				...message,
+				id,
+				sourceMapId: this.mapId,
+				origin: location.origin,
+				data: serialize(message.data, buffers)
+			};
+			this.target.postMessage(messageToPost, { transfer: buffers });
+		});
+	}
+	receive(message) {
+		const data = message.data;
+		const id = data.id;
+		const SPECIAL_ORIGINS = [
+			"file://",
+			"resource://android",
+			"null"
+		];
+		const origins = [data.origin, location.origin];
+		const isSameOrigin = data.origin === location.origin;
+		const hasSpecialOrigin = origins.some((origin) => SPECIAL_ORIGINS.includes(origin));
+		if (!isSameOrigin && !hasSpecialOrigin) return;
+		if (data.targetMapId && this.mapId !== data.targetMapId) return;
+		if (data.type === "<cancel>") {
+			delete this.tasks[id];
+			const abortController = this.abortControllers[id];
+			delete this.abortControllers[id];
+			if (abortController) abortController.abort();
+			return;
+		}
+		if (isWorker(self) || data.mustQueue) {
+			this.tasks[id] = data;
+			this.taskQueue.push(id);
+			this.invoker.trigger();
+			return;
+		}
+		this.processTask(id, data);
+	}
+	process() {
+		if (this.taskQueue.length === 0) return;
+		const id = this.taskQueue.shift();
+		const task = this.tasks[id];
+		delete this.tasks[id];
+		if (this.taskQueue.length > 0) this.invoker.trigger();
+		if (!task) return;
+		this.processTask(id, task);
+	}
+	async processTask(id, task) {
+		if (task.type === "<response>") {
+			const resolveReject = this.resolveRejects[id];
+			delete this.resolveRejects[id];
+			if (!resolveReject) return;
+			if (task.error) resolveReject.reject(ensureError(deserialize(task.error)));
+			else resolveReject.resolve(deserialize(task.data));
+			return;
+		}
+		if (!this.messageHandlers[task.type]) {
+			this.completeTask(id, null, null);
+			return;
+		}
+		const params = deserialize(task.data);
+		const abortController = new AbortController();
+		this.abortControllers[id] = abortController;
+		try {
+			const data = await this.messageHandlers[task.type](task.sourceMapId, params, abortController);
+			this.completeTask(id, null, data);
+		} catch (err) {
+			this.completeTask(id, ensureError(err));
+		}
+	}
+	completeTask(id, err, data) {
+		const buffers = [];
+		delete this.abortControllers[id];
+		const responseMessage = {
+			id,
+			type: "<response>",
+			sourceMapId: this.mapId,
+			origin: location.origin,
+			error: err ? serialize(err) : null,
+			data: serialize(data, buffers)
+		};
+		this.target.postMessage(responseMessage, { transfer: buffers });
+	}
+	remove() {
+		this.invoker.remove();
+		this.subscription.unsubscribe();
+	}
+};
+//#endregion
+//#region src/util/world_bounds.ts
+/**
+* Returns true if a given tile zoom (Z), X, and Y are in the bounds of the world.
+* Zoom bounds are the minimum zoom (inclusive) through the maximum zoom (inclusive).
+* X and Y bounds are 0 (inclusive) to their respective zoom-dependent maxima (exclusive).
+*
+* @param zoom - the tile zoom (Z)
+* @param x - the tile X
+* @param y - the tile Y
+* @returns `true` if a given tile zoom, X, and Y are in the bounds of the world.
+*/
+function isInBoundsForTileZoomXY(zoom, x, y) {
+	return !(zoom < 0 || zoom > 25 || y < 0 || y >= Math.pow(2, zoom) || x < 0 || x >= Math.pow(2, zoom));
+}
+/**
+* Returns true if a given zoom and `LngLat` are in the bounds of the world.
+* Does not wrap `LngLat` when checking if in bounds.
+* Zoom bounds are the minimum zoom (inclusive) through the maximum zoom (inclusive).
+* `LngLat` bounds are the mercator world's north-west corner (inclusive) to its south-east corner (exclusive).
+*
+* @param zoom - the tile zoom (Z)
+* @param LngLat - the `LngLat` object containing the longitude and latitude
+* @returns `true` if a given zoom and `LngLat` are in the bounds of the world.
+*/
+function isInBoundsForZoomLngLat(zoom, lnglat) {
+	const { x, y } = MercatorCoordinate.fromLngLat(lnglat);
+	return !(zoom < 0 || zoom > 25 || y < 0 || y >= 1 || x < 0 || x >= 1);
+}
+//#endregion
+//#region src/tile/tile_id.ts
+/**
+* A canonical way to define a tile ID
+*/
+var CanonicalTileID = class {
+	constructor(z, x, y) {
+		if (!isInBoundsForTileZoomXY(z, x, y)) throw new Error(`x=${x}, y=${y}, z=${z} outside of bounds. 0<=x<${Math.pow(2, z)}, 0<=y<${Math.pow(2, z)} 0<=z<=25 `);
+		this.z = z;
+		this.x = x;
+		this.y = y;
+		this.key = calculateTileKey(0, z, z, x, y);
+	}
+	equals(id) {
+		return this.z === id.z && this.x === id.x && this.y === id.y;
+	}
+	/**
+	* given a list of urls, choose a url template and return a tile URL
+	*/
+	url(urls, pixelRatio, scheme) {
+		const bbox = getTileBBox(this.x, this.y, this.z);
+		const quadkey = getQuadkey(this.z, this.x, this.y);
+		return urls[(this.x + this.y) % urls.length].replace(/{prefix}/g, (this.x % 16).toString(16) + (this.y % 16).toString(16)).replace(/{z}/g, String(this.z)).replace(/{x}/g, String(this.x)).replace(/{y}/g, String(scheme === "tms" ? Math.pow(2, this.z) - this.y - 1 : this.y)).replace(/{ratio}/g, pixelRatio > 1 ? "@2x" : "").replace(/{quadkey}/g, quadkey).replace(/{bbox-epsg-3857}/g, bbox);
+	}
+	isChildOf(parent) {
+		const dz = this.z - parent.z;
+		return dz > 0 && parent.x === this.x >> dz && parent.y === this.y >> dz;
+	}
+	getTilePoint(coord) {
+		const tilesAtZoom = Math.pow(2, this.z);
+		return new Point((coord.x * tilesAtZoom - this.x) * EXTENT$1, (coord.y * tilesAtZoom - this.y) * EXTENT$1);
+	}
+	toString() {
+		return `${this.z}/${this.x}/${this.y}`;
+	}
+};
+/**
+* @internal
+* An unwrapped tile identifier
+*/
+var UnwrappedTileID = class {
+	constructor(wrap, canonical) {
+		this.wrap = wrap;
+		this.canonical = canonical;
+		this.key = calculateTileKey(wrap, canonical.z, canonical.z, canonical.x, canonical.y);
+	}
+};
+/**
+* An overscaled tile identifier
+*/
+var OverscaledTileID = class OverscaledTileID {
+	constructor(overscaledZ, wrap, z, x, y) {
+		this.terrainRttPosMatrix32f = null;
+		if (overscaledZ < z) throw new Error(`overscaledZ should be >= z; overscaledZ = ${overscaledZ}; z = ${z}`);
+		this.overscaledZ = overscaledZ;
+		this.wrap = wrap;
+		this.canonical = new CanonicalTileID(z, +x, +y);
+		this.key = calculateTileKey(wrap, overscaledZ, z, x, y);
+	}
+	clone() {
+		return new OverscaledTileID(this.overscaledZ, this.wrap, this.canonical.z, this.canonical.x, this.canonical.y);
+	}
+	equals(id) {
+		return this.overscaledZ === id.overscaledZ && this.wrap === id.wrap && this.canonical.equals(id.canonical);
+	}
+	/**
+	* Returns a new `OverscaledTileID` representing the tile at the target zoom level.
+	* When targetZ is greater than the current canonical z, the canonical coordinates are unchanged.
+	* When targetZ is less than the current canonical z, the canonical coordinates are updated.
+	* @param targetZ - the zoom level to scale to. Must be less than or equal to this.overscaledZ
+	* @returns a new OverscaledTileID representing the tile at the target zoom level
+	* @throws if targetZ is greater than this.overscaledZ
+	*/
+	scaledTo(targetZ) {
+		if (targetZ > this.overscaledZ) throw new Error(`targetZ > this.overscaledZ; targetZ = ${targetZ}; overscaledZ = ${this.overscaledZ}`);
+		const zDifference = this.canonical.z - targetZ;
+		if (targetZ > this.canonical.z) return new OverscaledTileID(targetZ, this.wrap, this.canonical.z, this.canonical.x, this.canonical.y);
+		else return new OverscaledTileID(targetZ, this.wrap, targetZ, this.canonical.x >> zDifference, this.canonical.y >> zDifference);
+	}
+	isOverscaled() {
+		return this.overscaledZ > this.canonical.z;
+	}
+	calculateScaledKey(targetZ, withWrap) {
+		if (targetZ > this.overscaledZ) throw new Error(`targetZ > this.overscaledZ; targetZ = ${targetZ}; overscaledZ = ${this.overscaledZ}`);
+		const zDifference = this.canonical.z - targetZ;
+		if (targetZ > this.canonical.z) return calculateTileKey(this.wrap * +withWrap, targetZ, this.canonical.z, this.canonical.x, this.canonical.y);
+		else return calculateTileKey(this.wrap * +withWrap, targetZ, targetZ, this.canonical.x >> zDifference, this.canonical.y >> zDifference);
+	}
+	isChildOf(parent) {
+		if (parent.wrap !== this.wrap) return false;
+		if (this.overscaledZ - parent.overscaledZ <= 0) return false;
+		if (parent.overscaledZ === 0) return this.overscaledZ > 0;
+		const dz = this.canonical.z - parent.canonical.z;
+		if (dz < 0) return false;
+		return parent.canonical.x === this.canonical.x >> dz && parent.canonical.y === this.canonical.y >> dz;
+	}
+	children(sourceMaxZoom) {
+		if (this.overscaledZ >= sourceMaxZoom) return [new OverscaledTileID(this.overscaledZ + 1, this.wrap, this.canonical.z, this.canonical.x, this.canonical.y)];
+		const z = this.canonical.z + 1;
+		const x = this.canonical.x * 2;
+		const y = this.canonical.y * 2;
+		return [
+			new OverscaledTileID(z, this.wrap, z, x, y),
+			new OverscaledTileID(z, this.wrap, z, x + 1, y),
+			new OverscaledTileID(z, this.wrap, z, x, y + 1),
+			new OverscaledTileID(z, this.wrap, z, x + 1, y + 1)
+		];
+	}
+	isLessThan(rhs) {
+		if (this.wrap < rhs.wrap) return true;
+		if (this.wrap > rhs.wrap) return false;
+		if (this.overscaledZ < rhs.overscaledZ) return true;
+		if (this.overscaledZ > rhs.overscaledZ) return false;
+		if (this.canonical.x < rhs.canonical.x) return true;
+		if (this.canonical.x > rhs.canonical.x) return false;
+		return this.canonical.y < rhs.canonical.y;
+	}
+	wrapped() {
+		return new OverscaledTileID(this.overscaledZ, 0, this.canonical.z, this.canonical.x, this.canonical.y);
+	}
+	unwrapTo(wrap) {
+		return new OverscaledTileID(this.overscaledZ, wrap, this.canonical.z, this.canonical.x, this.canonical.y);
+	}
+	overscaleFactor() {
+		return Math.pow(2, this.overscaledZ - this.canonical.z);
+	}
+	toUnwrapped() {
+		return new UnwrappedTileID(this.wrap, this.canonical);
+	}
+	toString() {
+		return `${this.overscaledZ}/${this.canonical.x}/${this.canonical.y}`;
+	}
+	getTilePoint(coord) {
+		return this.canonical.getTilePoint(new MercatorCoordinate(coord.x - this.wrap, coord.y));
+	}
+	/**
+	* Maps tile-local coordinates that may fall outside the `[0, extent)` range
+	* to the correct neighbor tile and the corresponding in-tile position.
+	*
+	* Coordinates can exceed tile bounds when geometry (e.g. symbol labels along
+	* lines) extends across tile edges. This method resolves such coordinates to
+	* the appropriate adjacent tile, wrapping horizontally across world boundaries
+	* and returning `null` when the target falls beyond the polar tile-grid limits.
+	*
+	* When the coordinates are already in bounds, the original tile ID is returned.
+	*
+	* @param x - x coordinate relative to this tile, may be outside `[0, extent)`
+	* @param y - y coordinate relative to this tile, may be outside `[0, extent)`
+	* @param extent - tile coordinate extent, default {@link EXTENT}
+	* @returns the resolved tile ID and in-tile coordinates, or `null` if the
+	*          target is beyond the tile grid (e.g. past the poles)
+	*/
+	normalizeCoordinates(x, y, extent = EXTENT$1) {
+		if (x >= 0 && x < extent && y >= 0 && y < extent) return {
+			tileID: this,
+			x,
+			y
+		};
+		const tileOffsetX = Math.floor(x / extent);
+		const tileOffsetY = Math.floor(y / extent);
+		const newX = x - tileOffsetX * extent;
+		const newY = y - tileOffsetY * extent;
+		const z = this.canonical.z;
+		const dim = 1 << z;
+		const newCanonicalY = this.canonical.y + tileOffsetY;
+		if (newCanonicalY < 0 || newCanonicalY >= dim) return null;
+		let newCanonicalX = this.canonical.x + tileOffsetX;
+		let newWrap = this.wrap;
+		if (newCanonicalX < 0) {
+			newWrap -= Math.ceil(-newCanonicalX / dim);
+			newCanonicalX = (newCanonicalX % dim + dim) % dim;
+		} else if (newCanonicalX >= dim) {
+			newWrap += Math.floor(newCanonicalX / dim);
+			newCanonicalX = newCanonicalX % dim;
+		}
+		return {
+			tileID: new OverscaledTileID(this.overscaledZ, newWrap, z, newCanonicalX, newCanonicalY),
+			x: newX,
+			y: newY
+		};
+	}
+};
+function calculateTileKey(wrap, overscaledZ, z, x, y) {
+	wrap *= 2;
+	if (wrap < 0) wrap = wrap * -1 - 1;
+	const dim = 1 << z;
+	return (dim * dim * wrap + dim * y + x).toString(36) + z.toString(36) + overscaledZ.toString(36);
+}
+const EPSG3857_HALF_CIRCUMFERENCE = Math.PI * 6378137;
+/**
+* Builds the `{bbox-epsg-3857}` token used in WMS tile URLs: the tile's bounding
+* box in EPSG:3857 meters as a `minX,minY,maxX,maxY` string.
+*
+* Inlined from the archived \@mapbox/whoots-js (ISC, Copyright (c) 2017 Mapbox).
+*/
+function getTileBBox(x, y, z) {
+	y = Math.pow(2, z) - y - 1;
+	const min = getEpsg3857Coords(x * 256, y * 256, z);
+	const max = getEpsg3857Coords((x + 1) * 256, (y + 1) * 256, z);
+	return `${min[0]},${min[1]},${max[0]},${max[1]}`;
+}
+/** Projects tile pixel coordinates to EPSG:3857 meters. */
+function getEpsg3857Coords(x, y, z) {
+	const resolution = 2 * EPSG3857_HALF_CIRCUMFERENCE / 256 / Math.pow(2, z);
+	return [x * resolution - EPSG3857_HALF_CIRCUMFERENCE, y * resolution - EPSG3857_HALF_CIRCUMFERENCE];
+}
+function getQuadkey(z, x, y) {
+	let quadkey = "";
+	for (let i = z; i > 0; i--) {
+		const mask = 1 << i - 1;
+		quadkey += (x & mask ? 1 : 0) + (y & mask ? 2 : 0);
+	}
+	return quadkey;
+}
+function compareTileId(a, b) {
+	const aWrap = Math.abs(a.wrap * 2) - +(a.wrap < 0);
+	const bWrap = Math.abs(b.wrap * 2) - +(b.wrap < 0);
+	return a.overscaledZ - b.overscaledZ || bWrap - aWrap || b.canonical.y - a.canonical.y || b.canonical.x - a.canonical.x;
+}
+register("CanonicalTileID", CanonicalTileID);
+register("OverscaledTileID", OverscaledTileID, { omit: ["terrainRttPosMatrix32f"] });
 //#endregion
 //#region node_modules/@maplibre/vt-pbf/dist/index.es.js
 var FeatureWrapper = class {
@@ -31596,539 +34119,153 @@ function topDownFeatureComparator(a, b) {
 	return b - a;
 }
 //#endregion
-//#region src/style/style_layer_index.ts
-var StyleLayerIndex = class {
-	constructor(layerConfigs, globalState) {
-		this.keyCache = {};
-		if (layerConfigs) this.replace(layerConfigs, globalState);
-	}
-	replace(layerConfigs, globalState) {
-		this._layerConfigs = {};
-		this._layers = {};
-		this.update(layerConfigs, [], globalState);
-	}
-	update(layerConfigs, removedIds, globalState) {
-		for (const layerConfig of layerConfigs) {
-			this._layerConfigs[layerConfig.id] = layerConfig;
-			const layer = this._layers[layerConfig.id] = createStyleLayer(layerConfig, globalState);
-			layer._featureFilter = featureFilter(layer.filter, `layers[${layerConfig.id}].filter`, globalState);
-			if (this.keyCache[layerConfig.id]) delete this.keyCache[layerConfig.id];
-		}
-		for (const id of removedIds) {
-			delete this.keyCache[id];
-			delete this._layerConfigs[id];
-			delete this._layers[id];
-		}
-		this.familiesBySource = {};
-		const groups = groupByLayout(Object.values(this._layerConfigs), this.keyCache);
-		for (const layerConfigs of groups) {
-			const layers = layerConfigs.map((layerConfig) => this._layers[layerConfig.id]);
-			const layer = layers[0];
-			if (layer.isHidden()) continue;
-			const sourceId = layer.source || "";
-			let sourceGroup = this.familiesBySource[sourceId];
-			sourceGroup ||= this.familiesBySource[sourceId] = {};
-			const sourceLayerId = layer.sourceLayer || "_geojsonTileLayer";
-			let sourceLayerFamilies = sourceGroup[sourceLayerId];
-			sourceLayerFamilies ||= sourceGroup[sourceLayerId] = [];
-			sourceLayerFamilies.push(layers);
-		}
-	}
-};
-//#endregion
-//#region src/render/glyph_atlas.ts
-const padding = 1;
-var GlyphAtlas = class {
-	constructor(stacks) {
-		const positions = {};
-		const bins = [];
-		for (const stack in stacks) {
-			const stackPositions = positions[stack] = {};
-			for (const variant in stacks[stack]) {
-				const glyphs = stacks[stack][variant];
-				stackPositions[variant] = {};
-				for (const id in glyphs) {
-					const src = glyphs[id];
-					if (!src || src.bitmap.width === 0 || src.bitmap.height === 0) continue;
-					const bin = {
-						x: 0,
-						y: 0,
-						w: src.bitmap.width + 2,
-						h: src.bitmap.height + 2
-					};
-					bins.push(bin);
-					stackPositions[variant][id] = {
-						rect: bin,
-						metrics: src.metrics
-					};
-				}
-			}
-		}
-		const { w, h } = potpack(bins);
-		const image = new AlphaImage({
-			width: w || 1,
-			height: h || 1
-		});
-		for (const stack in stacks) for (const variant in stacks[stack]) {
-			const glyphs = stacks[stack][variant];
-			for (const id in glyphs) {
-				const src = glyphs[id];
-				if (!src || src.bitmap.width === 0 || src.bitmap.height === 0) continue;
-				const bin = positions[stack][variant][id].rect;
-				AlphaImage.copy(src.bitmap, image, {
-					x: 0,
-					y: 0
-				}, {
-					x: bin.x + padding,
-					y: bin.y + padding
-				}, src.bitmap);
-			}
-		}
-		this.image = image;
-		this.positions = positions;
-	}
-};
-register("GlyphAtlas", GlyphAtlas);
-//#endregion
-//#region src/util/world_bounds.ts
-/**
-* Returns true if a given tile zoom (Z), X, and Y are in the bounds of the world.
-* Zoom bounds are the minimum zoom (inclusive) through the maximum zoom (inclusive).
-* X and Y bounds are 0 (inclusive) to their respective zoom-dependent maxima (exclusive).
-*
-* @param zoom - the tile zoom (Z)
-* @param x - the tile X
-* @param y - the tile Y
-* @returns `true` if a given tile zoom, X, and Y are in the bounds of the world.
-*/
-function isInBoundsForTileZoomXY(zoom, x, y) {
-	return !(zoom < 0 || zoom > 25 || y < 0 || y >= Math.pow(2, zoom) || x < 0 || x >= Math.pow(2, zoom));
-}
-//#endregion
-//#region src/tile/tile_id.ts
-/**
-* A canonical way to define a tile ID
-*/
-var CanonicalTileID = class {
-	constructor(z, x, y) {
-		if (!isInBoundsForTileZoomXY(z, x, y)) throw new Error(`x=${x}, y=${y}, z=${z} outside of bounds. 0<=x<${Math.pow(2, z)}, 0<=y<${Math.pow(2, z)} 0<=z<=25 `);
-		this.z = z;
-		this.x = x;
-		this.y = y;
-		this.key = calculateTileKey(0, z, z, x, y);
-	}
-	equals(id) {
-		return this.z === id.z && this.x === id.x && this.y === id.y;
-	}
-	/**
-	* given a list of urls, choose a url template and return a tile URL
-	*/
-	url(urls, pixelRatio, scheme) {
-		const bbox = getTileBBox(this.x, this.y, this.z);
-		const quadkey = getQuadkey(this.z, this.x, this.y);
-		return urls[(this.x + this.y) % urls.length].replace(/{prefix}/g, (this.x % 16).toString(16) + (this.y % 16).toString(16)).replace(/{z}/g, String(this.z)).replace(/{x}/g, String(this.x)).replace(/{y}/g, String(scheme === "tms" ? Math.pow(2, this.z) - this.y - 1 : this.y)).replace(/{ratio}/g, pixelRatio > 1 ? "@2x" : "").replace(/{quadkey}/g, quadkey).replace(/{bbox-epsg-3857}/g, bbox);
-	}
-	isChildOf(parent) {
-		const dz = this.z - parent.z;
-		return dz > 0 && parent.x === this.x >> dz && parent.y === this.y >> dz;
-	}
-	getTilePoint(coord) {
-		const tilesAtZoom = Math.pow(2, this.z);
-		return new Point((coord.x * tilesAtZoom - this.x) * EXTENT$1, (coord.y * tilesAtZoom - this.y) * EXTENT$1);
-	}
-	toString() {
-		return `${this.z}/${this.x}/${this.y}`;
-	}
-};
+//#region src/tile/tile_cache.ts
 /**
 * @internal
-* An unwrapped tile identifier
-*/
-var UnwrappedTileID = class {
-	constructor(wrap, canonical) {
-		this.wrap = wrap;
-		this.canonical = canonical;
-		this.key = calculateTileKey(wrap, canonical.z, canonical.z, canonical.x, canonical.y);
-	}
-};
-/**
-* An overscaled tile identifier
-*/
-var OverscaledTileID = class OverscaledTileID {
-	constructor(overscaledZ, wrap, z, x, y) {
-		this.terrainRttPosMatrix32f = null;
-		if (overscaledZ < z) throw new Error(`overscaledZ should be >= z; overscaledZ = ${overscaledZ}; z = ${z}`);
-		this.overscaledZ = overscaledZ;
-		this.wrap = wrap;
-		this.canonical = new CanonicalTileID(z, +x, +y);
-		this.key = calculateTileKey(wrap, overscaledZ, z, x, y);
-	}
-	clone() {
-		return new OverscaledTileID(this.overscaledZ, this.wrap, this.canonical.z, this.canonical.x, this.canonical.y);
-	}
-	equals(id) {
-		return this.overscaledZ === id.overscaledZ && this.wrap === id.wrap && this.canonical.equals(id.canonical);
-	}
-	/**
-	* Returns a new `OverscaledTileID` representing the tile at the target zoom level.
-	* When targetZ is greater than the current canonical z, the canonical coordinates are unchanged.
-	* When targetZ is less than the current canonical z, the canonical coordinates are updated.
-	* @param targetZ - the zoom level to scale to. Must be less than or equal to this.overscaledZ
-	* @returns a new OverscaledTileID representing the tile at the target zoom level
-	* @throws if targetZ is greater than this.overscaledZ
-	*/
-	scaledTo(targetZ) {
-		if (targetZ > this.overscaledZ) throw new Error(`targetZ > this.overscaledZ; targetZ = ${targetZ}; overscaledZ = ${this.overscaledZ}`);
-		const zDifference = this.canonical.z - targetZ;
-		if (targetZ > this.canonical.z) return new OverscaledTileID(targetZ, this.wrap, this.canonical.z, this.canonical.x, this.canonical.y);
-		else return new OverscaledTileID(targetZ, this.wrap, targetZ, this.canonical.x >> zDifference, this.canonical.y >> zDifference);
-	}
-	isOverscaled() {
-		return this.overscaledZ > this.canonical.z;
-	}
-	calculateScaledKey(targetZ, withWrap) {
-		if (targetZ > this.overscaledZ) throw new Error(`targetZ > this.overscaledZ; targetZ = ${targetZ}; overscaledZ = ${this.overscaledZ}`);
-		const zDifference = this.canonical.z - targetZ;
-		if (targetZ > this.canonical.z) return calculateTileKey(this.wrap * +withWrap, targetZ, this.canonical.z, this.canonical.x, this.canonical.y);
-		else return calculateTileKey(this.wrap * +withWrap, targetZ, targetZ, this.canonical.x >> zDifference, this.canonical.y >> zDifference);
-	}
-	isChildOf(parent) {
-		if (parent.wrap !== this.wrap) return false;
-		if (this.overscaledZ - parent.overscaledZ <= 0) return false;
-		if (parent.overscaledZ === 0) return this.overscaledZ > 0;
-		const dz = this.canonical.z - parent.canonical.z;
-		if (dz < 0) return false;
-		return parent.canonical.x === this.canonical.x >> dz && parent.canonical.y === this.canonical.y >> dz;
-	}
-	children(sourceMaxZoom) {
-		if (this.overscaledZ >= sourceMaxZoom) return [new OverscaledTileID(this.overscaledZ + 1, this.wrap, this.canonical.z, this.canonical.x, this.canonical.y)];
-		const z = this.canonical.z + 1;
-		const x = this.canonical.x * 2;
-		const y = this.canonical.y * 2;
-		return [
-			new OverscaledTileID(z, this.wrap, z, x, y),
-			new OverscaledTileID(z, this.wrap, z, x + 1, y),
-			new OverscaledTileID(z, this.wrap, z, x, y + 1),
-			new OverscaledTileID(z, this.wrap, z, x + 1, y + 1)
-		];
-	}
-	isLessThan(rhs) {
-		if (this.wrap < rhs.wrap) return true;
-		if (this.wrap > rhs.wrap) return false;
-		if (this.overscaledZ < rhs.overscaledZ) return true;
-		if (this.overscaledZ > rhs.overscaledZ) return false;
-		if (this.canonical.x < rhs.canonical.x) return true;
-		if (this.canonical.x > rhs.canonical.x) return false;
-		return this.canonical.y < rhs.canonical.y;
-	}
-	wrapped() {
-		return new OverscaledTileID(this.overscaledZ, 0, this.canonical.z, this.canonical.x, this.canonical.y);
-	}
-	unwrapTo(wrap) {
-		return new OverscaledTileID(this.overscaledZ, wrap, this.canonical.z, this.canonical.x, this.canonical.y);
-	}
-	overscaleFactor() {
-		return Math.pow(2, this.overscaledZ - this.canonical.z);
-	}
-	toUnwrapped() {
-		return new UnwrappedTileID(this.wrap, this.canonical);
-	}
-	toString() {
-		return `${this.overscaledZ}/${this.canonical.x}/${this.canonical.y}`;
-	}
-	getTilePoint(coord) {
-		return this.canonical.getTilePoint(new MercatorCoordinate(coord.x - this.wrap, coord.y));
-	}
-	/**
-	* Maps tile-local coordinates that may fall outside the `[0, extent)` range
-	* to the correct neighbor tile and the corresponding in-tile position.
-	*
-	* Coordinates can exceed tile bounds when geometry (e.g. symbol labels along
-	* lines) extends across tile edges. This method resolves such coordinates to
-	* the appropriate adjacent tile, wrapping horizontally across world boundaries
-	* and returning `null` when the target falls beyond the polar tile-grid limits.
-	*
-	* When the coordinates are already in bounds, the original tile ID is returned.
-	*
-	* @param x - x coordinate relative to this tile, may be outside `[0, extent)`
-	* @param y - y coordinate relative to this tile, may be outside `[0, extent)`
-	* @param extent - tile coordinate extent, default {@link EXTENT}
-	* @returns the resolved tile ID and in-tile coordinates, or `null` if the
-	*          target is beyond the tile grid (e.g. past the poles)
-	*/
-	normalizeCoordinates(x, y, extent = EXTENT$1) {
-		if (x >= 0 && x < extent && y >= 0 && y < extent) return {
-			tileID: this,
-			x,
-			y
-		};
-		const tileOffsetX = Math.floor(x / extent);
-		const tileOffsetY = Math.floor(y / extent);
-		const newX = x - tileOffsetX * extent;
-		const newY = y - tileOffsetY * extent;
-		const z = this.canonical.z;
-		const dim = 1 << z;
-		const newCanonicalY = this.canonical.y + tileOffsetY;
-		if (newCanonicalY < 0 || newCanonicalY >= dim) return null;
-		let newCanonicalX = this.canonical.x + tileOffsetX;
-		let newWrap = this.wrap;
-		if (newCanonicalX < 0) {
-			newWrap -= Math.ceil(-newCanonicalX / dim);
-			newCanonicalX = (newCanonicalX % dim + dim) % dim;
-		} else if (newCanonicalX >= dim) {
-			newWrap += Math.floor(newCanonicalX / dim);
-			newCanonicalX = newCanonicalX % dim;
-		}
-		return {
-			tileID: new OverscaledTileID(this.overscaledZ, newWrap, z, newCanonicalX, newCanonicalY),
-			x: newX,
-			y: newY
-		};
-	}
-};
-function calculateTileKey(wrap, overscaledZ, z, x, y) {
-	wrap *= 2;
-	if (wrap < 0) wrap = wrap * -1 - 1;
-	const dim = 1 << z;
-	return (dim * dim * wrap + dim * y + x).toString(36) + z.toString(36) + overscaledZ.toString(36);
-}
-const EPSG3857_HALF_CIRCUMFERENCE = Math.PI * 6378137;
-/**
-* Builds the `{bbox-epsg-3857}` token used in WMS tile URLs: the tile's bounding
-* box in EPSG:3857 meters as a `minX,minY,maxX,maxY` string.
+* A [least-recently-used cache](https://en.wikipedia.org/wiki/Cache_algorithms)
+* with hash lookup made possible by keeping a list of keys in parallel to
+* an array of dictionary of values
 *
-* Inlined from the archived \@mapbox/whoots-js (ISC, Copyright (c) 2017 Mapbox).
+* TileManager offloads currently unused tiles to this cache, and when a tile gets used again,
+* it is also removed from this cache. Thus addition is the only operation that counts as "usage"
+* for the purposes of LRU behaviour.
 */
-function getTileBBox(x, y, z) {
-	y = Math.pow(2, z) - y - 1;
-	const min = getEpsg3857Coords(x * 256, y * 256, z);
-	const max = getEpsg3857Coords((x + 1) * 256, (y + 1) * 256, z);
-	return `${min[0]},${min[1]},${max[0]},${max[1]}`;
-}
-/** Projects tile pixel coordinates to EPSG:3857 meters. */
-function getEpsg3857Coords(x, y, z) {
-	const resolution = 2 * EPSG3857_HALF_CIRCUMFERENCE / 256 / Math.pow(2, z);
-	return [x * resolution - EPSG3857_HALF_CIRCUMFERENCE, y * resolution - EPSG3857_HALF_CIRCUMFERENCE];
-}
-function getQuadkey(z, x, y) {
-	let quadkey = "";
-	for (let i = z; i > 0; i--) {
-		const mask = 1 << i - 1;
-		quadkey += (x & mask ? 1 : 0) + (y & mask ? 2 : 0);
+var TileCache = class {
+	/**
+	* @param max - number of permitted values
+	* @param onRemove - callback called with items when they expire
+	*/
+	constructor(max, onRemove) {
+		this.max = max;
+		this.onRemove = onRemove;
+		this.reset();
 	}
-	return quadkey;
-}
-register("CanonicalTileID", CanonicalTileID);
-register("OverscaledTileID", OverscaledTileID, { omit: ["terrainRttPosMatrix32f"] });
-//#endregion
-//#region src/source/worker_tile.ts
-var WorkerTile = class {
-	constructor(params) {
-		this.tileID = new OverscaledTileID(params.tileID.overscaledZ, params.tileID.wrap, params.tileID.canonical.z, params.tileID.canonical.x, params.tileID.canonical.y);
-		this.uid = params.uid;
-		this.zoom = params.zoom;
-		this.pixelRatio = params.pixelRatio;
-		this.tileSize = params.tileSize;
-		this.source = params.source;
-		this.overscaling = this.tileID.overscaleFactor();
-		this.showCollisionBoxes = params.showCollisionBoxes;
-		this.collectResourceTiming = !!params.collectResourceTiming;
-		this.returnDependencies = !!params.returnDependencies;
-		this.promoteId = params.promoteId;
-		this.inFlightDependencies = [];
+	/**
+	* Clear the cache
+	*
+	* @returns this cache
+	*/
+	reset() {
+		for (const key in this.data) for (const removedData of this.data[key]) {
+			if (removedData.timeout) clearTimeout(removedData.timeout);
+			this.onRemove(removedData.value);
+		}
+		this.data = {};
+		this.order = [];
+		return this;
 	}
-	async parse(data, layerIndex, availableImages, actor, subdivisionGranularity) {
-		this.data = data;
-		this.collisionBoxArray = new CollisionBoxArray();
-		const sourceLayerCoder = new DictionaryCoder(Object.keys(data.layers).sort());
-		const featureIndex = new FeatureIndex(this.tileID, this.promoteId);
-		featureIndex.bucketLayerIDs = [];
-		const buckets = {};
-		const options = {
-			featureIndex,
-			iconDependencies: {},
-			patternDependencies: {},
-			glyphDependencies: {},
-			dashDependencies: {},
-			availableImages,
-			subdivisionGranularity
+	/**
+	* Add a key, value combination to the cache, trimming its size if this pushes
+	* it over max length.
+	*
+	* @param tileID - lookup key for the item
+	* @param data - tile data
+	*
+	* @returns this cache
+	*/
+	add(tileID, data, expiryTimeout) {
+		const key = tileID.wrapped().key;
+		if (this.data[key] === void 0) this.data[key] = [];
+		const dataWrapper = {
+			value: data,
+			timeout: void 0
 		};
-		const layerFamilies = layerIndex.familiesBySource[this.source];
-		for (const sourceLayerId in layerFamilies) {
-			const sourceLayer = data.layers[sourceLayerId];
-			if (!sourceLayer) continue;
-			if (sourceLayer.version === 1) warnOnce(`Vector tile source "${this.source}" layer "${sourceLayerId}" does not use vector tile spec v2 and therefore may have some rendering errors.`);
-			const sourceLayerIndex = sourceLayerCoder.encode(sourceLayerId);
-			const features = [];
-			for (let index = 0; index < sourceLayer.length; index++) {
-				const feature = sourceLayer.feature(index);
-				const id = featureIndex.getId(feature, sourceLayerId);
-				features.push({
-					feature,
-					id,
-					index,
-					sourceLayerIndex
-				});
-			}
-			for (const family of layerFamilies[sourceLayerId]) {
-				const layer = family[0];
-				if (layer.source !== this.source) warnOnce(`layer.source = ${layer.source} does not equal this.source = ${this.source}`);
-				if (layer.isHidden(this.zoom, true)) continue;
-				recalculateLayers(family, this.zoom, availableImages);
-				(buckets[layer.id] = layer.createBucket({
-					index: featureIndex.bucketLayerIDs.length,
-					layers: family,
-					zoom: this.zoom,
-					pixelRatio: this.pixelRatio,
-					overscaling: this.overscaling,
-					collisionBoxArray: this.collisionBoxArray,
-					sourceLayerIndex,
-					sourceID: this.source
-				})).populate(features, options, this.tileID.canonical);
-				featureIndex.bucketLayerIDs.push(family.map((l) => l.id));
-			}
+		if (expiryTimeout !== void 0) dataWrapper.timeout = setTimeout(() => {
+			this.remove(tileID, dataWrapper);
+		}, expiryTimeout);
+		this.data[key].push(dataWrapper);
+		this.order.push(key);
+		if (this.order.length > this.max) {
+			const removedData = this._getAndRemoveByKey(this.order[0]);
+			if (removedData) this.onRemove(removedData);
 		}
-		const stacks = mapObject(options.glyphDependencies, (variants) => mapObject(variants, (glyphs) => Object.keys(glyphs)));
-		for (const request of this.inFlightDependencies) request?.abort();
-		this.inFlightDependencies = [];
-		let getGlyphsPromise = Promise.resolve({});
-		if (Object.keys(stacks).length) {
-			const abortController = new AbortController();
-			this.inFlightDependencies.push(abortController);
-			getGlyphsPromise = actor.sendAsync({
-				type: "GG",
-				data: {
-					stacks,
-					source: this.source,
-					tileID: this.tileID,
-					type: "glyphs"
-				}
-			}, abortController);
+		return this;
+	}
+	/**
+	* Determine whether the value attached to `key` is present
+	*
+	* @param tileID - the key to be looked-up
+	* @returns whether the cache has this value
+	*/
+	has(tileID) {
+		return tileID.wrapped().key in this.data;
+	}
+	/**
+	* Get the value attached to a specific key and remove data from cache.
+	* If the key is not found, returns `null`
+	*
+	* @param tileID - the key to look up
+	* @returns the tile data, or null if it isn't found
+	*/
+	getAndRemove(tileID) {
+		if (!this.has(tileID)) return null;
+		return this._getAndRemoveByKey(tileID.wrapped().key);
+	}
+	_getAndRemoveByKey(key) {
+		const data = this.data[key].shift();
+		if (data.timeout) clearTimeout(data.timeout);
+		if (this.data[key].length === 0) delete this.data[key];
+		this.order.splice(this.order.indexOf(key), 1);
+		return data.value;
+	}
+	getByKey(key) {
+		const data = this.data[key];
+		return data ? data[0].value : null;
+	}
+	/**
+	* Get the value attached to a specific key without removing data
+	* from the cache. If the key is not found, returns `null`
+	*
+	* @param tileID - the key to look up
+	* @returns the tile data, or null if it isn't found
+	*/
+	get(tileID) {
+		if (!this.has(tileID)) return null;
+		return this.data[tileID.wrapped().key][0].value;
+	}
+	/**
+	* Remove a key/value combination from the cache.
+	*
+	* @param tileID - the key for the pair to delete
+	* @param value - If a value is provided, remove that exact version of the value.
+	* @returns this cache
+	*/
+	remove(tileID, value) {
+		if (!this.has(tileID)) return this;
+		const key = tileID.wrapped().key;
+		const dataIndex = value === void 0 ? 0 : this.data[key].indexOf(value);
+		const data = this.data[key][dataIndex];
+		this.data[key].splice(dataIndex, 1);
+		if (data.timeout) clearTimeout(data.timeout);
+		if (this.data[key].length === 0) delete this.data[key];
+		this.onRemove(data.value);
+		this.order.splice(this.order.indexOf(key), 1);
+		return this;
+	}
+	/**
+	* Change the max size of the cache.
+	*
+	* @param max - the max size of the cache
+	* @returns this cache
+	*/
+	setMaxSize(max) {
+		this.max = max;
+		while (this.order.length > this.max) {
+			const removedData = this._getAndRemoveByKey(this.order[0]);
+			if (removedData) this.onRemove(removedData);
 		}
-		const icons = Object.keys(options.iconDependencies);
-		let getIconsPromise = Promise.resolve({});
-		if (icons.length) {
-			const abortController = new AbortController();
-			this.inFlightDependencies.push(abortController);
-			getIconsPromise = actor.sendAsync({
-				type: "GI",
-				data: {
-					icons,
-					source: this.source,
-					tileID: this.tileID,
-					type: "icons"
-				}
-			}, abortController);
-		}
-		const patterns = Object.keys(options.patternDependencies);
-		let getPatternsPromise = Promise.resolve({});
-		if (patterns.length) {
-			const abortController = new AbortController();
-			this.inFlightDependencies.push(abortController);
-			getPatternsPromise = actor.sendAsync({
-				type: "GI",
-				data: {
-					icons: patterns,
-					source: this.source,
-					tileID: this.tileID,
-					type: "patterns"
-				}
-			}, abortController);
-		}
-		const dashes = options.dashDependencies;
-		let getDashesPromise = Promise.resolve({});
-		if (Object.keys(dashes).length) {
-			const abortController = new AbortController();
-			this.inFlightDependencies.push(abortController);
-			getDashesPromise = actor.sendAsync({
-				type: "GDA",
-				data: { dashes }
-			}, abortController);
-		}
-		const [glyphMap, iconMap, patternMap, dashPositions] = await Promise.all([
-			getGlyphsPromise,
-			getIconsPromise,
-			getPatternsPromise,
-			getDashesPromise
-		]);
-		const glyphAtlas = new GlyphAtlas(glyphMap);
-		const imageAtlas = new ImageAtlas(iconMap, patternMap);
-		for (const key in buckets) {
-			const bucket = buckets[key];
-			if (!bucket.hasDependencies) continue;
-			recalculateLayers(bucket.layers, this.zoom, availableImages);
-			bucket.addFeatures({
-				options,
-				canonical: this.tileID.canonical,
-				glyphMap,
-				glyphPositions: glyphAtlas.positions,
-				iconMap,
-				iconPositions: imageAtlas.iconPositions,
-				patternMap,
-				patternPositions: imageAtlas.patternPositions,
-				dashPositions,
-				showCollisionBoxes: this.showCollisionBoxes
-			});
-		}
-		return {
-			buckets: Object.values(buckets).filter((b) => !b.isEmpty()),
-			featureIndex,
-			collisionBoxArray: this.collisionBoxArray,
-			glyphAtlasImage: glyphAtlas.image,
-			imageAtlas,
-			dashPositions,
-			glyphMap: this.returnDependencies ? glyphMap : null,
-			iconMap: this.returnDependencies ? iconMap : null,
-			glyphPositions: this.returnDependencies ? glyphAtlas.positions : null
-		};
+		return this;
 	}
-};
-function recalculateLayers(layers, zoom, availableImages) {
-	const parameters = new EvaluationParameters(zoom);
-	for (const layer of layers) layer.recalculate(parameters, availableImages);
-}
-//#endregion
-//#region src/source/worker_tile_state.ts
-var WorkerTileState = class {
-	constructor() {
-		this.loading = {};
-		this.loaded = {};
-		this.parsing = {};
-	}
-	startLoading(uid, tile) {
-		this.loading[uid] = tile;
-	}
-	finishLoading(uid) {
-		delete this.loading[uid];
-	}
-	abort(uid) {
-		const tile = this.loading[uid];
-		if (!tile?.abort) return;
-		tile.abort.abort();
-		delete this.loading[uid];
-	}
-	getParsing(uid) {
-		return this.parsing[uid];
-	}
-	setParsing(uid, state) {
-		this.parsing[uid] = state;
-	}
-	removeParsing(uid) {
-		delete this.parsing[uid];
-	}
-	markLoaded(uid, tile) {
-		this.loaded[uid] = tile;
-	}
-	getLoaded(uid) {
-		const tile = this.loaded[uid];
-		if (!tile) return void 0;
-		return tile;
-	}
-	removeLoaded(uid) {
-		delete this.loaded[uid];
-	}
-	clearLoaded() {
-		this.loaded = {};
+	/**
+	* Remove entries that do not pass a filter function. Used for removing
+	* stale tiles from the cache.
+	*
+	* @param filterFn - Determines whether the tile is filtered. If the supplied function returns false, the tile will be filtered out.
+	*/
+	filter(filterFn) {
+		const removed = [];
+		for (const key in this.data) for (const entry of this.data[key]) if (!filterFn(entry.value)) removed.push(entry);
+		for (const r of removed) this.remove(r.value.tileID, r);
 	}
 };
 var BoundedLRUCache = class {
@@ -32157,724 +34294,6 @@ var BoundedLRUCache = class {
 	}
 };
 //#endregion
-//#region src/util/request_performance.ts
-/**
-* @internal
-* Safe wrapper for the performance resource timing API in web workers with graceful degradation
-*/
-var RequestPerformance = class {
-	constructor(url) {
-		this.start = `${url}#start`;
-		this.end = `${url}#end`;
-		this.measure = url;
-		performance.mark(this.start);
-	}
-	finish() {
-		performance.mark(this.end);
-		let resourceTimingData = performance.getEntriesByName(this.measure);
-		if (resourceTimingData.length === 0) {
-			performance.measure(this.measure, this.start, this.end);
-			resourceTimingData = performance.getEntriesByName(this.measure);
-			performance.clearMarks(this.start);
-			performance.clearMarks(this.end);
-			performance.clearMeasures(this.measure);
-		}
-		return resourceTimingData;
-	}
-};
-//#endregion
-//#region src/source/vector_tile_overzoomed.ts
-var VectorTileFeatureOverzoomed = class {
-	constructor(type, geometry, properties, id, extent) {
-		this.type = type;
-		this.properties = properties ? properties : {};
-		this.extent = extent;
-		this.pointsArray = geometry;
-		this.id = id;
-	}
-	loadGeometry() {
-		return this.pointsArray.map((ring) => ring.map((point) => new Point(point.x, point.y)));
-	}
-};
-var VectorTileLayerOverzoomed = class {
-	constructor(features, layerName, extent) {
-		this.version = 2;
-		this._myFeatures = features;
-		this.name = layerName;
-		this.length = features.length;
-		this.extent = extent;
-	}
-	feature(i) {
-		return this._myFeatures[i];
-	}
-};
-var VectorTileOverzoomed = class {
-	constructor() {
-		this.layers = {};
-	}
-	addLayer(layer) {
-		this.layers[layer.name] = layer;
-	}
-};
-/**
-* This function slices a source tile layer into an overzoomed tile layer for a target tile ID.
-* @param sourceLayer - the source tile layer to slice
-* @param maxZoomTileID - the maximum zoom tile ID
-* @param targetTileID - the target tile ID
-* @returns - the overzoomed tile layer
-*/
-function sliceVectorTileLayer(sourceLayer, maxZoomTileID, targetTileID) {
-	const { extent } = sourceLayer;
-	const dz = targetTileID.z - maxZoomTileID.z;
-	const scale = Math.pow(2, dz);
-	const offsetX = (targetTileID.x - maxZoomTileID.x * scale) * extent;
-	const offsetY = (targetTileID.y - maxZoomTileID.y * scale) * extent;
-	const featureWrappers = [];
-	for (let index = 0; index < sourceLayer.length; index++) {
-		const feature = sourceLayer.feature(index);
-		let geometry = feature.loadGeometry();
-		for (const ring of geometry) for (const point of ring) {
-			point.x = point.x * scale - offsetX;
-			point.y = point.y * scale - offsetY;
-		}
-		const buffer = 128;
-		geometry = clipGeometry(geometry, feature.type, -128, -128, extent + buffer, extent + buffer);
-		if (geometry.length === 0) continue;
-		featureWrappers.push(new VectorTileFeatureOverzoomed(feature.type, geometry, feature.properties, feature.id, extent));
-	}
-	return new VectorTileLayerOverzoomed(featureWrappers, sourceLayer.name, extent);
-}
-//#endregion
-//#region src/source/vector_tile_worker_source.ts
-/**
-* The {@link WorkerSource} implementation that supports {@link VectorTileSource}. This class is
-* used by vector tile sources to perform tile processing operations in a separate worker thread.
-*/
-var VectorTileWorkerSource = class {
-	constructor(actor, layerIndex, availableImages) {
-		this.actor = actor;
-		this.layerIndex = layerIndex;
-		this.availableImages = availableImages;
-		this.tileState = new WorkerTileState();
-		this.overzoomedTileResultCache = new BoundedLRUCache(1e3);
-	}
-	/**
-	* Loads a vector tile
-	*/
-	loadVectorTile(params, rawData) {
-		try {
-			return {
-				vectorTile: params.encoding !== "mlt" ? new VectorTile(new PbfReader(rawData)) : new MLTVectorTile(rawData),
-				rawData
-			};
-		} catch (ex) {
-			const bytes = new Uint8Array(rawData);
-			const isGzipped = bytes[0] === 31 && bytes[1] === 139;
-			let errorMessage = `Unable to parse the tile at ${params.request.url}, `;
-			if (isGzipped) errorMessage += "please make sure the data is not gzipped and that you have configured the relevant header in the server";
-			else errorMessage += `got error: ${ensureError(ex).message}`;
-			throw new Error(errorMessage);
-		}
-	}
-	/**
-	* Implements {@link WorkerSource.loadTile}.
-	*/
-	async loadTile(params) {
-		const { uid, overzoomParameters } = params;
-		if (overzoomParameters) params.request = overzoomParameters.overzoomRequest;
-		const timing = this._startRequestTiming(params);
-		const workerTile = new WorkerTile(params);
-		this.tileState.startLoading(uid, workerTile);
-		const abortController = new AbortController();
-		workerTile.abort = abortController;
-		try {
-			const tileResponse = await getArrayBuffer(params.request, abortController);
-			if (params.etag && params.etag === tileResponse.etag) {
-				this.tileState.finishLoading(uid);
-				return this._getEtagUnmodifiedResult(tileResponse, timing);
-			}
-			const tileResult = this.loadVectorTile(params, tileResponse.data);
-			this.tileState.finishLoading(uid);
-			if (!tileResult) return null;
-			let { vectorTile, rawData } = tileResult;
-			if (overzoomParameters) ({vectorTile, rawData} = this._getOverzoomTile(params, vectorTile));
-			const cacheControl = this._getExpiryData(tileResponse);
-			const resourceTiming = this._finishRequestTiming(timing);
-			workerTile.vectorTile = vectorTile;
-			workerTile.etag = tileResponse.etag;
-			this.tileState.markLoaded(uid, workerTile);
-			const parsingState = {
-				rawData,
-				cacheControl,
-				resourceTiming
-			};
-			this.tileState.setParsing(uid, parsingState);
-			return await this._parseWorkerTile(workerTile, params);
-		} catch (err) {
-			this.tileState.finishLoading(uid);
-			this.tileState.markLoaded(uid, workerTile);
-			throw err;
-		}
-	}
-	_getEtagUnmodifiedResult(response, timing) {
-		return extend({ etagUnmodified: true }, this._getExpiryData(response), this._finishRequestTiming(timing));
-	}
-	async _parseWorkerTile(workerTile, params) {
-		const parseState = this.tileState.getParsing(workerTile.uid);
-		let result = await workerTile.parse(workerTile.vectorTile, this.layerIndex, this.availableImages, this.actor, params.subdivisionGranularity);
-		if (parseState) {
-			const { rawData, cacheControl, resourceTiming } = parseState;
-			const encoding = params.overzoomParameters ? "mvt" : params.encoding;
-			result = extend({
-				rawTileData: rawData.slice(0),
-				encoding
-			}, result, cacheControl, resourceTiming);
-			this.tileState.removeParsing(workerTile.uid);
-		} else if (workerTile.etag) result = extend(result, { etag: workerTile.etag });
-		return result;
-	}
-	_getExpiryData({ expires, cacheControl, etag }) {
-		const data = {};
-		if (expires) data.expires = expires;
-		if (cacheControl) data.cacheControl = cacheControl;
-		if (etag) data.etag = etag;
-		return data;
-	}
-	_startRequestTiming(params) {
-		if (!params.request?.collectResourceTiming) return;
-		return new RequestPerformance(params.request.url);
-	}
-	_finishRequestTiming(timing) {
-		const timingData = timing?.finish();
-		if (!timingData) return {};
-		return { resourceTiming: JSON.parse(JSON.stringify(timingData)) };
-	}
-	/**
-	* If we are seeking a tile deeper than the source's max available canonical tile, get the overzoomed tile
-	* @param params - the worker tile parameters
-	* @param maxZoomVectorTile - the original vector tile at the source's max available canonical zoom
-	* @returns the overzoomed tile and its raw data
-	*/
-	_getOverzoomTile(params, maxZoomVectorTile) {
-		const { tileID, source, overzoomParameters } = params;
-		const { maxZoomTileID } = overzoomParameters;
-		const cacheKey = `${maxZoomTileID.key}_${tileID.key}_${params.request?.url}`;
-		const cachedOverzoomTile = this.overzoomedTileResultCache.get(cacheKey);
-		if (cachedOverzoomTile) return cachedOverzoomTile;
-		const overzoomedVectorTile = new VectorTileOverzoomed();
-		const layerFamilies = this.layerIndex.familiesBySource[source];
-		for (const sourceLayerId in layerFamilies) {
-			const sourceLayer = maxZoomVectorTile.layers[sourceLayerId];
-			if (!sourceLayer) continue;
-			const slicedTileLayer = sliceVectorTileLayer(sourceLayer, maxZoomTileID, tileID.canonical);
-			if (slicedTileLayer.length > 0) overzoomedVectorTile.addLayer(slicedTileLayer);
-		}
-		const overzoomedVectorTileResult = {
-			vectorTile: overzoomedVectorTile,
-			rawData: fromVectorTileJs(overzoomedVectorTile).buffer
-		};
-		this.overzoomedTileResultCache.set(cacheKey, overzoomedVectorTileResult);
-		return overzoomedVectorTileResult;
-	}
-	/**
-	* Implements {@link WorkerSource.reloadTile}.
-	*/
-	async reloadTile(params) {
-		const uid = params.uid;
-		const workerTile = this.tileState.getLoaded(uid);
-		if (!workerTile) throw new Error("Should not be trying to reload a tile that was never loaded or has been removed");
-		if (!workerTile.vectorTile) return;
-		workerTile.showCollisionBoxes = params.showCollisionBoxes;
-		return await this._parseWorkerTile(workerTile, params);
-	}
-	/**
-	* Implements {@link WorkerSource.abortTile}.
-	*/
-	async abortTile(params) {
-		this.tileState.abort(params.uid);
-	}
-	/**
-	* Implements {@link WorkerSource.removeTile}.
-	*/
-	async removeTile(params) {
-		this.tileState.removeLoaded(params.uid);
-	}
-};
-//#endregion
-//#region src/source/raster_dem_tile_worker_source.ts
-var RasterDEMTileWorkerSource = class {
-	constructor() {
-		this.loaded = {};
-	}
-	async loadTile(params) {
-		const { uid, encoding, rawImageData, redFactor, greenFactor, blueFactor, baseShift } = params;
-		const width = rawImageData.width + 4;
-		const height = rawImageData.height + 4;
-		const dem = new DEMData(uid, isImageBitmap(rawImageData) ? new RGBAImage({
-			width,
-			height
-		}, await getImageData(rawImageData, -2, -2, width, height)) : rawImageData, encoding, redFactor, greenFactor, blueFactor, baseShift);
-		this.loaded ||= {};
-		this.loaded[uid] = dem;
-		return dem;
-	}
-	removeTile(params) {
-		const loaded = this.loaded, uid = params.uid;
-		if (loaded?.[uid]) delete loaded[uid];
-	}
-};
-//#endregion
-//#region src/source/geojson_worker_source.ts
-/**
-* The {@link WorkerSource} implementation that supports {@link GeoJSONSource}.
-* This class is designed to be easily reused to support custom source types
-* for data formats that can be parsed/converted into an in-memory GeoJSON
-* representation. To do so, create it with
-* `new GeoJSONWorkerSource(actor, layerIndex, customLoadGeoJSONFunction)`.
-* For a full example, see [mapbox-gl-topojson](https://github.com/developmentseed/mapbox-gl-topojson).
-*/
-var GeoJSONWorkerSource = class {
-	constructor(actor, layerIndex, availableImages, createGeoJSONIndexFunc = createGeoJSONIndex) {
-		this.actor = actor;
-		this.layerIndex = layerIndex;
-		this.availableImages = availableImages;
-		this.tileState = new WorkerTileState();
-		this._createGeoJSONIndex = createGeoJSONIndexFunc;
-	}
-	/**
-	* Retrieves and sends loaded vector tiles to the main thread.
-	*/
-	loadVectorTile(params) {
-		if (!this._geoJSONIndex) throw new Error("Unable to parse the data into a cluster or geojson");
-		const { z, x, y } = params.tileID.canonical;
-		const geoJSONTile = this._geoJSONIndex.getTile(z, x, y);
-		if (!geoJSONTile) return null;
-		const geojsonWrapper = new GeoJSONWrapper(geoJSONTile.features, {
-			version: 2,
-			extent: EXTENT$1
-		});
-		return {
-			vectorTile: geojsonWrapper,
-			rawData: fromVectorTileJs(geojsonWrapper, JSON_PREFIX).buffer
-		};
-	}
-	/**
-	* Implements {@link WorkerSource.loadTile}.
-	*/
-	async loadTile(params) {
-		const { uid } = params;
-		const workerTile = new WorkerTile(params);
-		workerTile.abort = new AbortController();
-		try {
-			const loadResult = this.loadVectorTile(params);
-			if (!loadResult) return null;
-			const { vectorTile, rawData } = loadResult;
-			workerTile.vectorTile = vectorTile;
-			this.tileState.markLoaded(uid, workerTile);
-			const parsingState = { rawData };
-			this.tileState.setParsing(uid, parsingState);
-			return await this._parseWorkerTile(workerTile, params);
-		} catch (err) {
-			this.tileState.markLoaded(uid, workerTile);
-			throw err;
-		}
-	}
-	async _parseWorkerTile(workerTile, params) {
-		const parseState = this.tileState.getParsing(workerTile.uid);
-		let result = await workerTile.parse(workerTile.vectorTile, this.layerIndex, this.availableImages, this.actor, params.subdivisionGranularity);
-		if (parseState) {
-			const { rawData } = parseState;
-			result = extend({
-				rawTileData: rawData.slice(0),
-				encoding: "mvt"
-			}, result);
-			this.tileState.removeParsing(workerTile.uid);
-		}
-		return result;
-	}
-	/**
-	* Implements {@link WorkerSource.abortTile}.
-	*/
-	async abortTile(params) {
-		this.tileState.abort(params.uid);
-	}
-	/**
-	* Implements {@link WorkerSource.removeTile}.
-	*/
-	async removeTile(params) {
-		this.tileState.removeLoaded(params.uid);
-	}
-	/**
-	* Fetches (if appropriate), parses and indexes geojson data into tiles. This
-	* preparatory method must be called before {@link GeoJSONWorkerSource.loadTile}
-	* can correctly serve up tiles. The first call to this method must contain a valid
-	* {@link params.data}, {@link params.request} or {@link params.dataDiff}. Subsequent
-	* calls may omit these parameters to reprocess the existing data (such as to update
-	* clustering options).
-	*
-	* Defers to {@link GeoJSONWorkerSource.loadAndProcessGeoJSON} for the pre-processing.
-	*
-	* When a `loadData` request comes in while a previous one is being processed,
-	* the previous one is aborted.
-	*
-	* @param params - the parameters
-	* @returns a promise that resolves when the data is loaded and parsed into a GeoJSON object
-	*/
-	async loadData(params) {
-		this._pendingRequest?.abort();
-		const timing = this._startRequestTiming(params);
-		this._pendingRequest = new AbortController();
-		try {
-			await this.loadAndProcessGeoJSON(params, this._pendingRequest);
-			delete this._pendingRequest;
-			this.tileState.clearLoaded();
-			const result = {};
-			if (params.request) result.data = params.data;
-			this._finishRequestTiming(timing, params, result);
-			return result;
-		} catch (err) {
-			delete this._pendingRequest;
-			if (!isAbortError(err)) throw err;
-			return { abandoned: true };
-		}
-	}
-	_startRequestTiming(params) {
-		if (!params.request?.collectResourceTiming) return;
-		return new RequestPerformance(params.request.url);
-	}
-	_finishRequestTiming(timing, params, result) {
-		const timingData = timing?.finish();
-		if (!timingData) return;
-		result.resourceTiming = { [params.source]: JSON.parse(JSON.stringify(timingData)) };
-	}
-	/**
-	* Implements {@link WorkerSource.reloadTile}.
-	*
-	* If the tile is loaded, reload by re-parsing the already available tile data.
-	* Otherwise, such as after a setData() call, we load the tile fresh.
-	*
-	* @param params - the parameters
-	* @returns A promise that resolves when the tile is reloaded
-	*/
-	async reloadTile(params) {
-		const uid = params.uid;
-		const workerTile = this.tileState.getLoaded(uid);
-		if (!workerTile) return await this.loadTile(params);
-		if (!workerTile.vectorTile) return;
-		workerTile.showCollisionBoxes = params.showCollisionBoxes;
-		return await this._parseWorkerTile(workerTile, params);
-	}
-	/**
-	* Fetch, parse and process GeoJSON according to the given parameters.
-	* Defers to {@link GeoJSONWorkerSource._loadGeoJSONFromString} for the fetching and parsing.
-	*
-	* @param params - the parameters
-	* @param abortController - the abort controller that allows aborting this operation
-	* @returns a promise that is resolved with the processes GeoJSON
-	*/
-	async loadAndProcessGeoJSON(params, abortController) {
-		if (params.request) params.data = (await getJSON(params.request, abortController)).data;
-		if (params.data) {
-			params.data = this._filterGeoJSON(params.data, params.filter, params.source);
-			this._geoJSONIndex = this._createGeoJSONIndex(params.data, params);
-			return;
-		}
-		if (params.dataDiff) {
-			this._geoJSONIndex ??= this._createGeoJSONIndex({
-				type: "FeatureCollection",
-				features: []
-			}, params);
-			this._geoJSONIndex.updateData(params.dataDiff, this._getFilterPredicate(params.filter, params.source));
-		}
-		if (params.updateCluster) this._geoJSONIndex.updateClusterOptions(params.geojsonVtOptions.cluster, getSuperclusterOptions(params));
-		if (this._geoJSONIndex == null) throw new Error(`Input data given to '${params.source}' is not a valid GeoJSON object.`);
-	}
-	/**
-	* Applies a filter to a GeoJSON object.
-	*/
-	_filterGeoJSON(data, filter, source) {
-		if (data.type !== "FeatureCollection") return data;
-		const predicate = this._getFilterPredicate(filter, source);
-		if (!predicate) return data;
-		return {
-			type: "FeatureCollection",
-			features: data.features.filter((feature) => predicate(feature))
-		};
-	}
-	/**
-	* Gets a predicate function that can be used to filter GeoJSON features.
-	*/
-	_getFilterPredicate(filter, source) {
-		if (typeof filter !== "boolean" && !filter?.length) return void 0;
-		const compiled = createExpression(filter, `sources.${source}.filter`, {
-			type: "boolean",
-			"property-type": "data-driven",
-			overridable: false,
-			transition: false
-		});
-		if (compiled.result === "error") throw new Error(compiled.value.map((err) => `${err.key}: ${err.message}`).join(", "));
-		return (feature) => compiled.value.evaluate({ zoom: 0 }, feature);
-	}
-	async removeSource(_params) {
-		this._pendingRequest?.abort();
-	}
-	getClusterExpansionZoom(params) {
-		return this._geoJSONIndex.getClusterExpansionZoom(params.clusterId);
-	}
-	getClusterChildren(params) {
-		return this._geoJSONIndex.getClusterChildren(params.clusterId);
-	}
-	getClusterLeaves(params) {
-		return this._geoJSONIndex.getClusterLeaves(params.clusterId, params.limit, params.offset);
-	}
-};
-function createGeoJSONIndex(data, params) {
-	return new GeoJSONVT(data, extend(params.geojsonVtOptions || {}, {
-		updateable: true,
-		clusterOptions: getSuperclusterOptions(params)
-	}));
-}
-function getSuperclusterOptions({ geojsonVtOptions, clusterProperties, source }) {
-	if (!clusterProperties || !geojsonVtOptions.clusterOptions) return geojsonVtOptions.clusterOptions;
-	const mapExpressions = {};
-	const reduceExpressions = {};
-	const globals = {
-		accumulated: null,
-		zoom: 0
-	};
-	const feature = { properties: null };
-	const propertyNames = Object.keys(clusterProperties);
-	for (const key of propertyNames) {
-		const [operator, mapExpression] = clusterProperties[key];
-		const mapExpressionParsed = createExpression(mapExpression, `sources.${source}.clusterProperties.${key}[1]`);
-		const reduceExpressionParsed = createExpression(typeof operator === "string" ? [
-			operator,
-			["accumulated"],
-			["get", key]
-		] : operator, `sources.${source}.clusterProperties.${key}[0]`);
-		mapExpressions[key] = mapExpressionParsed.value;
-		reduceExpressions[key] = reduceExpressionParsed.value;
-	}
-	geojsonVtOptions.clusterOptions.map = (pointProperties) => {
-		feature.properties = pointProperties;
-		const properties = {};
-		for (const key of propertyNames) properties[key] = mapExpressions[key].evaluate(globals, feature);
-		return properties;
-	};
-	geojsonVtOptions.clusterOptions.reduce = (accumulated, clusterProperties) => {
-		feature.properties = clusterProperties;
-		for (const key of propertyNames) {
-			globals.accumulated = accumulated[key];
-			accumulated[key] = reduceExpressions[key].evaluate(globals, feature);
-		}
-	};
-	return geojsonVtOptions.clusterOptions;
-}
-//#endregion
-//#region src/source/worker.ts
-/**
-* Loads an external script into worker (global) scope. The loader picks a
-* strategy based on what the script actually is:
-*
-* - `.mjs` URLs: dynamic `import()` directly, no fetch/sniff overhead. Worker
-*   CSP needs `script-src` to permit the URL.
-*
-* - Other URLs: fetch the source and sniff for ESM syntax (top-level `import`
-*   or `export`). If ESM is detected, run it through a blob-URL dynamic
-*   `import()` so the browser parses it as a module; this requires
-*   `script-src blob:` in the worker CSP. Otherwise treat it as UMD/IIFE and
-*   run it via `globalThis.eval`, which requires `script-src 'unsafe-eval'`.
-*/
-async function loadScript(url) {
-	if (url.endsWith(".mjs")) {
-		await import(
-			/* @vite-ignore */
-			url
-);
-		return;
-	}
-	const response = await fetch(url, { credentials: "same-origin" });
-	if (!response.ok) throw new Error(`Failed to load ${url}: ${response.status}`);
-	const code = await response.text();
-	if (/^[ \t]*(import|export)\s/m.test(code)) {
-		const blobUrl = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
-		try {
-			await import(
-				/* @vite-ignore */
-				blobUrl
-);
-		} finally {
-			URL.revokeObjectURL(blobUrl);
-		}
-		return;
-	}
-	globalThis.eval(code);
-}
-/**
-* The Worker class responsible for background thread related execution
-*/
-var Worker = class {
-	constructor(self) {
-		this.self = self;
-		this.actor = new Actor(self);
-		this.layerIndexes = {};
-		this.availableImages = {};
-		this.workerSources = {};
-		this.demWorkerSources = {};
-		this.externalWorkerSourceTypes = {};
-		this.globalStates = /* @__PURE__ */ new Map();
-		this.self.registerWorkerSource = (name, WorkerSource) => {
-			if (this.externalWorkerSourceTypes[name]) throw new Error(`Worker source with name "${name}" already registered.`);
-			this.externalWorkerSourceTypes[name] = WorkerSource;
-		};
-		this.self.addProtocol = addProtocol;
-		this.self.removeProtocol = removeProtocol;
-		/**
-		* Invoked by a right-to-left text plugin once it has fetched and parsed.
-		*
-		* @deprecated MapLibre shapes Arabic and reorders bidirectional text itself. A plugin
-		* registered here still replaces the built-in implementation, but this will be removed in a
-		* future release.
-		*/
-		this.self.registerRTLTextPlugin = (rtlTextPlugin) => {
-			rtlWorkerPlugin.setMethods(rtlTextPlugin);
-		};
-		this.self.makeRequest = makeRequest;
-		this.actor.registerMessageHandler("LDT", (mapId, params) => {
-			return this._getDEMWorkerSource(mapId, params.source).loadTile(params);
-		});
-		this.actor.registerMessageHandler("RDT", async (mapId, params) => {
-			this._getDEMWorkerSource(mapId, params.source).removeTile(params);
-		});
-		this.actor.registerMessageHandler("GCEZ", async (mapId, params) => {
-			return this._getWorkerSource(mapId, params.type, params.source).getClusterExpansionZoom(params);
-		});
-		this.actor.registerMessageHandler("GCC", async (mapId, params) => {
-			return this._getWorkerSource(mapId, params.type, params.source).getClusterChildren(params);
-		});
-		this.actor.registerMessageHandler("GCL", async (mapId, params) => {
-			return this._getWorkerSource(mapId, params.type, params.source).getClusterLeaves(params);
-		});
-		this.actor.registerMessageHandler("LD", (mapId, params) => {
-			return this._getWorkerSource(mapId, params.type, params.source).loadData(params);
-		});
-		this.actor.registerMessageHandler("LT", (mapId, params) => {
-			return this._getWorkerSource(mapId, params.type, params.source).loadTile(params);
-		});
-		this.actor.registerMessageHandler("RT", (mapId, params) => {
-			return this._getWorkerSource(mapId, params.type, params.source).reloadTile(params);
-		});
-		this.actor.registerMessageHandler("AT", (mapId, params) => {
-			return this._getWorkerSource(mapId, params.type, params.source).abortTile(params);
-		});
-		this.actor.registerMessageHandler("RMT", (mapId, params) => {
-			return this._getWorkerSource(mapId, params.type, params.source).removeTile(params);
-		});
-		this.actor.registerMessageHandler("RS", async (mapId, params) => {
-			if (!this.workerSources[mapId]?.[params.type]?.[params.source]) return;
-			const worker = this.workerSources[mapId][params.type][params.source];
-			delete this.workerSources[mapId][params.type][params.source];
-			if (worker.removeSource !== void 0) worker.removeSource(params);
-		});
-		this.actor.registerMessageHandler("RM", async (mapId) => {
-			delete this.layerIndexes[mapId];
-			delete this.availableImages[mapId];
-			delete this.workerSources[mapId];
-			delete this.demWorkerSources[mapId];
-			this.globalStates.delete(mapId);
-		});
-		this.actor.registerMessageHandler("SR", async (_mapId, params) => {
-			this.referrer = params;
-		});
-		this.actor.registerMessageHandler("SRPS", (mapId, params) => {
-			return this._syncRTLPluginState(mapId, params);
-		});
-		this.actor.registerMessageHandler("IS", async (_mapId, params) => {
-			await loadScript(params);
-		});
-		this.actor.registerMessageHandler("SI", (mapId, params) => {
-			return this._setImages(mapId, params);
-		});
-		this.actor.registerMessageHandler("UL", async (mapId, params) => {
-			this._getLayerIndex(mapId).update(params.layers, params.removedIds, this._getGlobalState(mapId));
-		});
-		this.actor.registerMessageHandler("UGS", async (mapId, params) => {
-			const globalState = this._getGlobalState(mapId);
-			for (const key in params) globalState[key] = params[key];
-		});
-		this.actor.registerMessageHandler("SL", async (mapId, params) => {
-			this._getLayerIndex(mapId).replace(params, this._getGlobalState(mapId));
-		});
-	}
-	_getGlobalState(mapId) {
-		let state = this.globalStates.get(mapId);
-		if (!state) {
-			state = {};
-			this.globalStates.set(mapId, state);
-		}
-		return state;
-	}
-	async _setImages(mapId, images) {
-		this.availableImages[mapId] = images;
-		for (const workerSource in this.workerSources[mapId]) {
-			const ws = this.workerSources[mapId][workerSource];
-			for (const source in ws) ws[source].availableImages = images;
-		}
-	}
-	async _syncRTLPluginState(mapId, incomingState) {
-		return await rtlWorkerPlugin.syncState(incomingState, loadScript);
-	}
-	_getAvailableImages(mapId) {
-		let availableImages = this.availableImages[mapId];
-		availableImages ||= [];
-		return availableImages;
-	}
-	_getLayerIndex(mapId) {
-		let layerIndexes = this.layerIndexes[mapId];
-		layerIndexes ||= this.layerIndexes[mapId] = new StyleLayerIndex();
-		return layerIndexes;
-	}
-	/**
-	* This is basically a lazy initialization of a worker per mapId and sourceType and sourceName
-	* @param mapId - the mapId
-	* @param sourceType - the source type - 'vector' for example
-	* @param sourceName - the source name - 'osm' for example
-	* @returns a new instance or a cached one
-	*/
-	_getWorkerSource(mapId, sourceType, sourceName) {
-		this.workerSources[mapId] ||= {};
-		this.workerSources[mapId][sourceType] ||= {};
-		if (!this.workerSources[mapId][sourceType][sourceName]) {
-			const actor = { sendAsync: (message, abortController) => {
-				message.targetMapId = mapId;
-				return this.actor.sendAsync(message, abortController);
-			} };
-			switch (sourceType) {
-				case "vector":
-					this.workerSources[mapId][sourceType][sourceName] = new VectorTileWorkerSource(actor, this._getLayerIndex(mapId), this._getAvailableImages(mapId));
-					break;
-				case "geojson":
-					this.workerSources[mapId][sourceType][sourceName] = new GeoJSONWorkerSource(actor, this._getLayerIndex(mapId), this._getAvailableImages(mapId));
-					break;
-				default: this.workerSources[mapId][sourceType][sourceName] = new this.externalWorkerSourceTypes[sourceType](actor, this._getLayerIndex(mapId), this._getAvailableImages(mapId));
-			}
-		}
-		return this.workerSources[mapId][sourceType][sourceName];
-	}
-	/**
-	* This is basically a lazy initialization of a worker per mapId and source
-	* @param mapId - the mapId
-	* @param sourceType - the source type - 'raster-dem' for example
-	* @returns a new instance or a cached one
-	*/
-	_getDEMWorkerSource(mapId, sourceType) {
-		this.demWorkerSources[mapId] ||= {};
-		this.demWorkerSources[mapId][sourceType] ||= new RasterDEMTileWorkerSource();
-		return this.demWorkerSources[mapId][sourceType];
-	}
-};
-if (isWorker(self)) self.worker = new Worker(self);
-//#endregion
-export { Worker as default };
+export { projectToWorldCoordinates as $, differenceOfAnglesDegrees as $n, add$4 as $r, Transitionable as $t, evaluateSizeForZoom as A, rotateX$3 as Ai, addProtocol as An, scaleZoom as Ar, toEvaluationFeature as At, isCluster as B, rotate$4 as Bi, arrayBufferToImage as Bn, EXTENT$1 as Br, SegmentVector as Bt, addDynamicAttributes as C, exactEquals$5 as Ci, GLOBAL_DISPATCHER_ID as Cn, pointPlaneSignedDistance as Cr, HEATMAP_FULL_RENDER_FBO_KEY as Ct, clipGeometry as D, multiply$5 as Di, getVideo as Dn, remapSaturate as Dr, RGBAImage as Dt, TextAnchorEnum as E, invert$2 as Ei, getReferrer as En, readImageUsingVideoFrame as Er, AlphaImage as Et, potpack as F, create$6 as Fi, isAbortError as Fn, uniqueId as Fr, Uniform4f as Ft, GeoJSONVT as G, createIdentityMat4f32 as Gn, zero as Gr, PosArray as Gt, rtlWorkerPlugin as H, offscreenCanvasSupported as Hi, bezier as Hn, length as Hr, CollisionCircleLayoutArray as Ht, isStyleImageWebGLData as I, fromRotation$2 as Ii, throwIfAborted as In, warnOnce as Ir, UniformColor as It, cameraDirectionFromPitchBearing as J, createVec3f64 as Jn, multiply$2 as Jr, TriangleIndexArray as Jt, isFillExtrusionStyleLayer as K, createIdentityMat4f64 as Kn, fromEuler as Kr, QuadTriangleArray as Kt, renderStyleImage as L, create$8 as Li, JSON_PREFIX as Ln, wrap$1 as Lr, UniformColorArray as Lt, getAnchorAlignment as M, rotateZ$3 as Mi, removeProtocol as Mn, subscribe as Mr, Uniform1i as Mt, ImageAtlas as N, scale$5 as Ni, config as Nn, threePlaneIntersection as Nr, Uniform2f as Nt, clipLine as O, ortho as Oi, makeRequest as On, rollPitchBearingEqual as Or, isCircleStyleLayer as Ot, ImagePosition as P, translate$2 as Pi, AbortError as Pn, translatePosition as Pr, Uniform3f as Pt, maxMercatorHorizonAngle as Q, degreesToRadians as Qn, transformMat4$1 as Qr, Properties as Qt, parseGlyphPbf as R, determinant$3 as Ri, MAX_VALID_LATITUDE as Rn, zoomScale as Rr, UniformFloatArray as Rt, SymbolBucket as S, equals$6 as Si, AJAXError as Sn, pick as Sr, isHillshadeStyleLayer as St, getAnchorJustification as T, identity$2 as Ti, getJSON as Tn, rayPlaneIntersection as Tr, renderColorRamp as Tt, collisionCircleLayout as U, Point as Ui, clamp$2 as Un, scale as Ur, LineStripIndexArray as Ut, codePointUsesLocalIdeographFontFamily as V, isOffscreenCanvasDistorted as Vi, arrayBufferToImageBitmap as Vn, create as Vr, CollisionBoxArray as Vt, isLineStyleLayer as W, clone as Wn, sqrLen as Wr, Pos3dArray as Wt, cameraMercatorCoordinateFromCenterAndRotation as X, deepEqual$1 as Xn, mul$3 as Xr, isRasterStyleLayer as Xt, cameraMercatorCoordinate as Y, createVec4f64 as Yn, slerp as Yr, createLayout as Yt, getMercatorHorizon as Z, defaultEasing as Zn, scale$3 as Zr, DataConstantProperty as Zt, createStyleLayer as _, transformQuat$1 as _i, derefLayers as _n, lerp as _r, SubdivisionGranularityExpression as _t, GeoJSONFeature as a, length$4 as ai, validateAndEmit as an, findLineIntersection as ar, lngFromMercatorX as at, isBackgroundStyleLayer as b, copy$5 as bi, Event as bn, nextPowerOfTwo as br, DEMData as bt, GeoJSONWrapper as c, rotateX$2 as ci, emptyStyle as cn, getEdgeTiles as cr, mercatorZfromAltitude as ct, OverscaledTileID as d, scale$4 as di, createExpression as dn, isImageBitmap as dr, VectorTile as dt, clone$5 as ei, EvaluationParameters as en, distanceOfAnglesRadians as er, tileCoordinatesToMercatorCoordinates as et, UnwrappedTileID as f, scaleAndAdd$2 as fi, interpolateFactory as fn, isPointableEvent as fr, EXTENT_BOUNDS as ft, Actor as g, transformMat4$2 as gi, diff as gn, isWorker as gr, SOUTH_POLE_Y as gt, isInBoundsForZoomLngLat as h, transformMat3$1 as hi, ValidationError as hn, isTouchableOrPointableType as hr, NORTH_POLE_Y as ht, MLTVectorTile as i, len$4 as ii, emitValidationErrors as in, filterObject as ir, latFromMercatorY as it, WritingMode as j, rotateY$3 as ji, getProtocol as jn, sphericalToCartesian as jr, Uniform1f as jt, evaluateSizeForFeature as k, perspective as ki, sameOrigin as kn, rollPitchBearingToQuat as kr, polygonIntersectsPolygon as kt, fromVectorTileJs as l, rotateY$2 as li, groupByLayout as ln, getImageData as lr, LngLat as lt, compareTileId as m, subtract$2 as mi, Color as mn, isTouchableEvent as mr, isFillStyleLayer as mt, TileCache as n, distance$2 as ni, register as nn, evaluateZoomSnap as nr, MercatorCoordinate as nt, DictionaryCoder as o, negate$2 as oi, validateStyle as on, getAABB as or, mercatorXfromLng as ot, calculateTileKey as p, sub$2 as pi, ProjectionDefinition as pn, isSafari as pr, Bounds as pt, calculateTileMatrix as q, createMat4f64 as qn, fromValues$2 as qr, RasterBoundsArray as qt, FeatureIndex as r, dot$5 as ri, SPEC_SOURCE_TYPES as rn, extend as rr, altitudeFromMercatorZ as rt, GEOJSON_TILE_LAYER_NAME as s, normalize$4 as si, validateStyleAndEmit as sn, getAngleDelta as sr, mercatorYfromLat as st, BoundedLRUCache as t, cross$2 as ti, ZoomHistory as tn, ensureError as tr, unprojectFromWorldCoordinates as tt, CanonicalTileID as u, rotateZ$2 as ui, featureFilter as un, getRollPitchBearing as ur, earthRadius as ut, isCustomStyleLayer as v, zero$2 as vi, latest as vn, mapObject as vr, SubdivisionGranularitySetting as vt, getOverlapMode as w, fromScaling as wi, getArrayBuffer as wn, radiansToDegrees as wr, isHeatmapStyleLayer as wt, isSymbolStyleLayer as x, create$5 as xi, Evented as xn, parseCacheControl as xr, Texture as xt, validateCustomStyleLayer as y, clone$6 as yi, ErrorEvent as yn, mod as yr, isColorReliefStyleLayer as yt, PbfReader as z, invert$5 as zi, angleToRotateBetweenVectors2D as zn, pixelsToTileUnits as zr, UniformMatrix4f as zt };
 
-//# sourceMappingURL=maplibre-gl-worker-dev.mjs.map
+//# sourceMappingURL=maplibre-gl-shared-dev.mjs.map
