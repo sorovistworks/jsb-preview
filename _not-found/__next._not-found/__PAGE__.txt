@@ -1,0 +1,27 @@
+2:"$Sreact.fragment"
+3:"/jsb-preview/_next/static/chunks/0umf92h1sb77c.js"
+4:I[39756,["$3"],"default"]
+5:I[37457,["$3"],"default"]
+a:"/jsb-preview/_next/static/chunks/19vu7u2n6xxzc.js"
+b:I[22016,["$a"],""]
+c:I[97367,["$3"],"OutletBoundary"]
+d:"$Sreact.suspense"
+10:"ViewportBoundary"
+11:I[97367,["$3"],"$10"]
+12:"MetadataBoundary"
+13:I[97367,["$3"],"$12"]
+14:I[27201,["$3"],"IconMark"]
+7:X
+7:C
+8:X
+9:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$2","c",{"children":[["$","section",null,{"className":"section","children":["$","div",null,{"className":"wrap notfound","children":[["$","h1",null,{"className":"display-2","children":"This page could not be found."}],["$","p",null,{"className":"lede","children":"The link may be old. Browse our materials or get in touch."}],["$","div",null,{"className":"hero-cta","children":[["$","$Lb",null,{"href":"/#contact","className":"btn btn-primary","children":"Get a quote"}],["$","$Lb",null,{"href":"/#products","className":"btn btn-ghost","children":"Explore materials"}]]}]]}]}],null,["$","$Lc",null,{"children":["$","$d",null,{"name":"Next.MetadataOutlet","children":"$@e"}]}]]}],"p":"$@f","v":null,"s":"$8"}}]]
+1:[["children",{"s":"/_not-found","h":64,"d":{"r":["$","$2","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+0:{"t":{"t":{"s":"","h":16,"c":"$Q1"},"h":{"r":["$","$2","h",{"children":[["$","meta",null,{"name":"robots","content":"noindex"}],["$","$L11",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#0b0a08"}]]}],["$","$L13",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$d",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"JSB Infraproducts | Construction Materials Supplier in Mumbai & MMR"}],["$","meta","1",{"name":"description","content":"JSB Infraproducts supplies aggregates, ready mix concrete, cement, fly ash, admixtures, micro silica, AAC blocks and slab ice to builders, contractors and RMC plants across Mumbai and the MMR."}],["$","meta","2",{"name":"application-name","content":"JSB Infraproducts"}],["$","link","3",{"rel":"manifest","href":"/jsb-preview/manifest.webmanifest"}],["$","meta","4",{"name":"keywords","content":"construction materials supplier Mumbai,aggregates supplier Mumbai,ready mix concrete Mumbai,fly ash supplier Thane,AAC blocks Mumbai,micro silica supplier,cement dealer MMR"}],["$","meta","5",{"name":"robots","content":"noindex, nofollow"}],["$","link","6",{"rel":"canonical","href":"https://www.jsbinfra.com/"}],["$","meta","7",{"name":"format-detection","content":"telephone=no"}],["$","meta","8",{"property":"og:title","content":"JSB Infraproducts | Construction Materials Supplier in Mumbai & MMR"}],["$","meta","9",{"property":"og:description","content":"JSB Infraproducts supplies aggregates, ready mix concrete, cement, fly ash, admixtures, micro silica, AAC blocks and slab ice to builders, contractors and RMC plants across Mumbai and the MMR."}],["$","meta","10",{"property":"og:url","content":"https://www.jsbinfra.com/"}],["$","meta","11",{"property":"og:site_name","content":"JSB Infraproducts"}],["$","meta","12",{"property":"og:locale","content":"en_IN"}],["$","meta","13",{"property":"og:image","content":"https://www.jsbinfra.com/opengraph-image?ce2e6350554126c8"}],["$","meta","14",{"property":"og:image:type","content":"image/png"}],["$","meta","15",{"property":"og:image:width","content":"1200"}],["$","meta","16",{"property":"og:image:height","content":"630"}],["$","meta","17",{"property":"og:image:alt","content":"JSB Infraproducts, construction materials supplier in Mumbai and the MMR"}],["$","meta","18",{"property":"og:type","content":"website"}],["$","meta","19",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","20",{"name":"twitter:title","content":"JSB Infraproducts | Construction Materials Supplier in Mumbai & MMR"}],["$","meta","21",{"name":"twitter:description","content":"JSB Infraproducts supplies aggregates, ready mix concrete, cement, fly ash, admixtures, micro silica, AAC blocks and slab ice to builders, contractors and RMC plants across Mumbai and the MMR."}],["$","meta","22",{"name":"twitter:image","content":"https://www.jsbinfra.com/opengraph-image?ce2e6350554126c8"}],["$","meta","23",{"name":"twitter:image:alt","content":"JSB Infraproducts, construction materials supplier in Mumbai and the MMR"}],["$","meta","24",{"name":"twitter:image:type","content":"image/png"}],["$","meta","25",{"name":"twitter:image:width","content":"1200"}],["$","meta","26",{"name":"twitter:image:height","content":"630"}],["$","link","27",{"rel":"icon","href":"/jsb-preview/icon.png?icon.2_yoggsh_0r1p.png","sizes":"512x452","type":"image/png"}],["$","link","28",{"rel":"apple-touch-icon","href":"/jsb-preview/apple-icon.png?apple-icon.3j2-xts4trrk3.png","sizes":"180x159","type":"image/png"}],["$","$L14","29",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@15","v":null,"s":"$8"}},"a":"$@16","u":"$@17","b":"85kvx3AYXDXBhLAPpUmRt"}
+e:null
+17:true
+8:300
+8:C
+16:0
+6:"$undefined"
+15:"$undefined"
+f:"$undefined"
